@@ -28,3 +28,33 @@ body {
     padding: 0 0 10px 0;
   }
 }
+.displayWords {
+  padding: 10px 20px 20px;
+  margin: 10px 0 20px;
+  background: #eff;
+}
+.displayWords__word {
+  font-size: 150%;
+  text-align: center;
+  margin: 10px 0;
+  padding: 60px 0;
+  border-top: 1px dashed #ccc;
+  border-bottom: 1px dashed #ccc;
+}
+.displayWords__btn, .displayWords__commonBtn {
+  text-align: center;
+  button {
+    margin: 10px;
+    padding: 10px;
+  }
+}
+.displayWords__commonBtn {
+  margin: 30px 0 0;
+}
+.displayWords__smallBtn {
+  button {
+    margin: 4px;
+    padding: 4px;
+    font-size: 80%;
+  }
+}

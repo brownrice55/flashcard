@@ -10,7 +10,7 @@
 
     <div class="v-container" v-cloak>
       <ul class="nav">
-        <li v-for="(page, key) in pages" @click="onclick(key)">{{ page }}</li>
+        <li v-for="(page, key) in pages" @click="onClick(key)">{{ page }}</li>
       </ul>
       <keep-alive>
         <component :is="currentPage"></component>
