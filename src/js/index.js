@@ -87,23 +87,34 @@ const app = Vue
       return {
         isAuto: false,
         isManual: false,
-        isInOrder: true,//表示順
-        isStopped: false,
         random10WordsIndex: [],
         displayWords: '',
         intervalTimerArray: [],
         countUp: 0,
-        autoSpeedArray: [ 3, 7, 11, 15 ],
-        isRegularSpeed: true,
-        speedLabel: '少し速め',
-        speedNow: '少し遅め',
-        orderLabel: '意味→単語',
-        orderNow: '単語→意味',
-        stoppedLabel: '停止する',
+        num: {
+          speed: 0,
+          order: 0,
+          stopped: 0,
+        },
+        label: {
+          speed: ['少し遅め', '少し速め'],
+          order: ['単語→意味', '意味→単語'],
+          stopped: ['停止する', '再開する'],
+        },
+        index: {
+          speed: [0,1],
+          order: [0,1],
+          stopped: [0,1],
+        },
+        autoSpeed: [
+          [ 3, 7, 11, 15 ],
+          [ 2, 4, 6, 8 ]
+        ],
         randomNo: 0,
         alreadyMemorized10Words: [],
         isComplete: false,
-        allWords: this.getAllWords
+        allWords: this.getAllWords,
+        isStopped: false,
       }
     },
     mounted() {
@@ -119,8 +130,8 @@ const app = Vue
         </template>
         <template v-else>
           <div class="displayWords__smallBtn">
-            <small>現在の表示順：{{ orderNow }}</small>　<button @click="onReverse">{{ orderLabel }}に変更</button><br />
-            <small>現在の速度：{{ speedNow }}</small>   <button @click="onChangeSpeed">{{ speedLabel }}に変更</button>
+            <small>現在の表示順：{{ label.order[index.order[0]] }}</small>　<button @click="onReverse">{{ label.order[index.order[1]] }}に変更</button><br />
+            <small>現在の速度：{{ label.speed[index.speed[0]] }}</small>   <button @click="onChangeSpeed">{{ label.speed[index.speed[1]] }}に変更</button>
           </div>
           <p class="displayWords__word">
             {{ displayWords }}
@@ -131,7 +142,7 @@ const app = Vue
                 <p><small>停止中</small></p>
               </template>
               <button @click="onAlreadyMemorized" :disabled="isStopped">もう覚えた</button>
-              <button @click="onStop">{{ stoppedLabel }}</button>
+              <button @click="onStop">{{ label.stopped[index.stopped[0]] }}</button>
               <p><small>再生中の単語を覚えたと思ったら、「もう覚えた」ボタンを押してね。</small></p>
               <p><small>覚えた単語 {{ alreadyMemorized10Words.length }}/10個</small></p>
             </template>
@@ -162,6 +173,7 @@ const app = Vue
       onAutoPlay() {
         this.isAuto = true;
         this.isManual = false;
+        this.countUp = 0;
         this.randomNo = this.getRandomIndex();
         this.displayWords = this.allWords[this.random10WordsIndex[this.randomNo]][0];
         this.autoPlay();
@@ -169,30 +181,29 @@ const app = Vue
       autoPlay() {
         this.intervalTimerArray.push(setInterval((function() {
           ++this.countUp;
-          if(this.countUp<this.autoSpeedArray[0]) {
-            this.displayWords = (this.isInOrder) ? this.allWords[this.random10WordsIndex[this.randomNo]][0] : this.allWords[this.random10WordsIndex[this.randomNo]][1];
-          }
-          else if(this.countUp<this.autoSpeedArray[1]) {
-            this.displayWords = (this.isInOrder) ? this.allWords[this.random10WordsIndex[this.randomNo]][1] : this.allWords[this.random10WordsIndex[this.randomNo]][0];
-          }
-          else if(this.countUp<this.autoSpeedArray[2]) {
-            this.displayWords = (this.isInOrder) ? this.allWords[this.random10WordsIndex[this.randomNo]][2] : this.allWords[this.random10WordsIndex[this.randomNo]][3];
-          }
-          else if(this.countUp<this.autoSpeedArray[3]) {
-            this.displayWords = (this.isInOrder) ? this.allWords[this.random10WordsIndex[this.randomNo]][3] : this.allWords[this.random10WordsIndex[this.randomNo]][2];
-          }
-          else {
-            this.randomNo = this.getRandomIndex();
-            this.countUp = 0;
-          }
-
+          this.displayWords = this.getWord(this.autoSpeed[this.index.speed[0]], this.allWords[this.random10WordsIndex[this.randomNo]]);
         }).bind(this), 1000));
-
+      },
+      getWord(aAutoSpeed, aDisplayWordArray) {
+        if(this.countUp<aAutoSpeed[0]) {
+          return (!this.index.order[0]) ? aDisplayWordArray[0] : aDisplayWordArray[1];
+        }
+        if(this.countUp<aAutoSpeed[1]) {
+          return (!this.index.order[0]) ? aDisplayWordArray[1] : aDisplayWordArray[0];
+        }
+        if(this.countUp<aAutoSpeed[2]) {
+          return (!this.index.order[0]) ? aDisplayWordArray[2] : aDisplayWordArray[3];
+        }
+        if(this.countUp<aAutoSpeed[3]) {
+          return (!this.index.order[0]) ? aDisplayWordArray[3] : aDisplayWordArray[2];
+        }
+        this.randomNo = this.getRandomIndex();
+        this.countUp = 0;
+        return (!this.index.order[0]) ? this.allWords[this.random10WordsIndex[this.randomNo]][0] : this.allWords[this.random10WordsIndex[this.randomNo]][1];
       },
       onStop() {
-        this.isStopped = !this.isStopped;
-        this.stoppedLabel = (this.isStopped) ? '再開する' : '停止する';
-
+        this.index.stopped = [this.num.stopped=1-this.num.stopped,1-this.num.stopped];
+        this.isStopped = this.index.stopped[0];
         // 停止を押した時に停止する
         if(this.isStopped && this.intervalTimerArray.length>0) {
           clearInterval(this.intervalTimerArray.shift());
@@ -206,15 +217,10 @@ const app = Vue
         return parseInt(Math.random() * this.random10WordsIndex.length);
       },
       onChangeSpeed() {
-        this.isRegularSpeed = !this.isRegularSpeed;
-        this.autoSpeedArray = (this.isRegularSpeed) ? [ 3, 7, 11, 15 ] : [ 2, 4, 6, 8 ];
-        this.speedNow = (this.isRegularSpeed) ? '少し遅め' : '少し速め';
-        this.speedLabel = (!this.isRegularSpeed) ? '少し遅め' : '少し速め';
+        this.index.speed = [this.num.speed=1-this.num.speed,1-this.num.speed];
       },
       onReverse() {
-        this.isInOrder = !this.isInOrder;
-        this.orderNow = this.isInOrder ? '単語→意味' : '意味→単語';
-        this.orderLabel = !this.isInOrder ? '単語→意味' : '意味→単語';
+        this.index.order = [this.num.order=1-this.num.order,1-this.num.order];
       },
       onAlreadyMemorized() {
         // 自動再生を止める
@@ -362,6 +368,7 @@ const app = Vue
     },
     methods: {
       onRegister() {
+        // 下記の新規登録した際の通し番号をどう入れる？　***後で検討
         this.input.push([0,'']);
 
         this.allWords.push(this.input);
