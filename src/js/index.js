@@ -115,6 +115,25 @@ const app = Vue
         isComplete: false,
         allWords: this.getAllWords,
         isStopped: false,
+        isQuestion: true,
+        isCorrectArray: [],
+        manualIndex: {
+          cnt : 0,
+          cnt2: 0,
+        },
+        judgeCorrectIndex: (aIsCorrectArray) => aIsCorrectArray ? 1 : 0,
+        percent: 100,
+        isCorrectLabel: {
+          text: ['誤', '正'],
+          class: ['complete__icon--again', 'complete__icon--ok']
+        },
+        manualOrder: 0,
+        manualOrderIndexArray: [
+          [0,1,2,3],[1,0,3,2]
+        ],
+        isUnselected: true,
+        questionWord: '',
+        questionWordArray: ['単語', '文章'],
       }
     },
     mounted() {
@@ -151,21 +170,44 @@ const app = Vue
       </div>
       <div v-if="isManual">
         <template v-if="isComplete">
-          <p></p>
+          <p>正答率 {{ percent }}%</p>
+          <ul>
+            <li v-for="(word, index) in random10WordsIndex" :key="word">
+              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2])] }}</span>　{{ allWords[word][0] }} - {{ allWords[word][1] }}</p>
+              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2+1])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2+1])] }}</span>　{{ allWords[word][2] }} - {{ allWords[word][3] }}</p>
+            </li>
+          </ul>
         </template>
         <template v-else>
-          <button>次へ</button>
+          <div class="displayWords__btn" v-if="isUnselected">
+            <button @click="onSelectOrder(true)">単語の意味を覚えたかテスト<br />単語→意味の順番</button>
+            <button @click="onSelectOrder(false)">意味から単語が分かるかテスト<br />意味→単語の順番</button>
+          </div>
+          <div class="displayWords" v-else>
+            <p v-if="isQuestion">下記の<template v-if="this.manualOrder">意味の</template>{{ questionWord }}<template v-if="!this.manualOrder">の意味</template>を思い浮かべてから、「次へ」を押してください。</p>
+            <p v-else>正解の時は「正解」を、間違っていたら「不正解」を押してください。</p>
+            <p class="displayWords__word">
+              {{ displayWords }}
+            </p>
+            <div v-if="isQuestion" class="displayWords__btn">
+              <button @click="onNext">次へ</button>
+            </div>
+            <div v-else class="displayWords__btn">
+              <button @click="onJudge(true)">正解</button>
+              <button @click="onJudge(false)">不正解</button>
+            </div>
+          </div>
         </template>
       </div>
       <template v-if="isComplete">
-      <div class="displayWords__commonBtn">
-        <button @click="onPlayAgain">もう一度チャレンジする</button>
-      </div>
-      </template>
-      <template v-if="!isAuto && !isManual">
         <div class="displayWords__commonBtn">
-          <button @click="onAutoPlay">自動で再生する</button>
-          <button @click="onManualPlay">手動で再生する</button>
+          <button @click="onPlayAgain">もう一度チャレンジする</button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="displayWords__commonBtn" v-if="!isAuto && !isManual">
+          <button @click="onAutoPlay">自動再生</button>
+          <button @click="onManualPlay">テスト形式</button>
         </div>
       </template>
     `,
@@ -250,17 +292,59 @@ const app = Vue
         this.isComplete = false;
         this.isAuto = false;
         this.isManual = false;
+        this.isUnselected = true;
         this.alreadyMemorized10Words = [];
         this.getRandom10WordsIndex();
       },
       onManualPlay() {
         this.isManual = true;
         this.isAuto = false;
+        this.isCorrectArray = [];
+      },
+      onSelectOrder(aOrder) {
+        this.isUnselected = false;
+        this.manualOrder = (aOrder) ? 0 : 1;//普通の順番でスタート
+        this.questionWord = this.questionWordArray[0];
+        this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.manualOrderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+      },
+      onNext() {//押すとcnt2は奇数になる
+        ++this.manualIndex.cnt2;
+        this.isQuestion = false;
+        this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.manualOrderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+      },
+      onJudge(aIsCorrect) {//押すとcnt2はcnt2は偶数になる
+        // 正解したかどうかを判定する「単語の意味を頭に思い浮かべてください」
+        // 正解true 不正解false
+        this.isCorrectArray.push(aIsCorrect);
+        this.isQuestion = true;
 
-        // 正解したかどうかを判定する「単語の意味を頭に思い浮かべてください」→合っていましたか？
+        // 両方正解したものは[4]に時刻をセットして、ローカルストレージにもセットする
+        let isCorrectArrayNow = this.isCorrectArray.slice(-2);
+        if(this.isCorrectArray.length%2===0) {
+          this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][4] = (isCorrectArrayNow[0] && isCorrectArrayNow[1]) ? this.getNow() : 0;
+        }
+
+        // 次の表示のための準備
+        if(this.manualIndex.cnt2===3) {
+          this.manualIndex.cnt2 = 0;
+          ++this.manualIndex.cnt;
+        }
+        else {
+          this.manualIndex.cnt2 = 2;
+        }
+
         // 10個出し終わったら、正誤表を出す
-        // 正解したものは「覚えた」にセットして、ローカルストレージにもセットする
-        // 間違っているものは再度挑戦
+        if(this.isCorrectArray.length===20) {
+          this.isComplete = true;
+          this.manualIndex.cnt = 0;
+          this.percent = this.isCorrectArray.filter(data=>data).length/20*100;
+          localStorage.setItem('allWords', JSON.stringify(this.allWords));
+        }
+        else {
+          this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.manualOrderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+          this.questionWord = (!this.manualIndex.cnt2) ? this.questionWordArray[0] : this.questionWordArray[1];
+        }
+
       },
       getRandom10WordsIndex() {
         let randomIndex = 0;
@@ -274,14 +358,11 @@ const app = Vue
           // 覚えた単語の日付の古いものから取得する
           alreadyMemorizedWords.sort(
             function(a,b) {
-              return a[4] > b[4] ? 1 : -1;
+              return a[4] < b[4] ? 1 : -1;
             }
           );
-
-          for(let cnt=0,len=10-notYetMemorizedWords.length;cnt<len;++cnt) {
-            notYetMemorizedWords.push(alreadyMemorizedWords[cnt]);
-          }
-          getRandom10Words = notYetMemorizedWords;
+          let additionArrayLength = 10-notYetMemorizedWords.length;
+          getRandom10Words = notYetMemorizedWords.concat(alreadyMemorizedWords.slice(0,additionArrayLength));
         }
         else {
           for(let cnt=0,len=notYetMemorizedWords.length;cnt<10;++cnt,--len) {
@@ -291,7 +372,6 @@ const app = Vue
         }
 
         let getRandom10WordsIndex = getRandom10Words.map(data=>data=data[5]);
-
         this.random10WordsIndex = getRandom10WordsIndex;
       }
     },
@@ -369,7 +449,8 @@ const app = Vue
     methods: {
       onRegister() {
         // 下記の新規登録した際の通し番号をどう入れる？　***後で検討
-        this.input.push([0,'']);
+        this.input[4] = 0;
+        this.input[5] = '';
 
         this.allWords.push(this.input);
         localStorage.setItem('allWords', JSON.stringify(this.allWords));
