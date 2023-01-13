@@ -61,6 +61,17 @@ body {
     font-size: 80%;
   }
 }
+.displayWords__conditions {
+  padding: 0;
+  margin: 6px 0 2px;;
+  font-size: 80%;
+  li {
+    list-style: none;
+    display: inline-block;
+    padding: 0 6px 6px;
+    margin: 0;
+  }
+}
 .complete__icon {
   font-size: 120%;
   padding: 0 10px 0 0;

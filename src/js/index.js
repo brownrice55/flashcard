@@ -129,23 +129,24 @@ const app = Vue
         intervalTimerArray: [],
         countUp: 0,
         num: {
-          speed: 0,
           order: 0,
           stopped: 0,
         },
         label: {
-          speed: ['少し遅め', '少し速め'],
           order: ['単語→意味', '意味→単語'],
           stopped: ['停止する', '再開する'],
         },
         index: {
-          speed: [0,1],
-          order: [0,1],
+          order: 0,
           stopped: [0,1],
         },
+        speedRangeIndex: 2,
         autoSpeed: [
+          [ 5, 11, 17, 23 ],
+          [ 4, 9, 14, 19 ],
           [ 3, 7, 11, 15 ],
-          [ 2, 4, 6, 8 ]
+          [ 2, 5, 8, 11 ],
+          [ 1, 3, 5, 7 ]
         ],
         randomNo: 0,
         alreadyMemorized10Words: [],
@@ -186,10 +187,16 @@ const app = Vue
           </ul>
         </template>
         <template v-else>
-          <div class="displayWords__smallBtn">
-            <small>現在の表示順：{{ label.order[index.order[0]] }}</small>　<button @click="onReverse">{{ label.order[index.order[1]] }}に変更</button><br />
-            <small>現在の速度：{{ label.speed[index.speed[0]] }}</small>   <button @click="onChangeSpeed">{{ label.speed[index.speed[1]] }}に変更</button>
-          </div>
+          <ul class="displayWords__conditions">
+            <li>現在の表示順：
+              <select v-model="index.order">
+                <option v-for="(order,index) in label.order" :key="order" :value="index">{{ order }}</option>
+              </select>
+            </li>
+            <li>現在の速度：
+              <label>遅い<input type="range" min="0" max="4" step="1" v-model="speedRangeIndex" />速い</label>
+            </li>
+          </ul>
           <p class="displayWords__word">
             {{ displayWords }}
           </p>
@@ -266,25 +273,25 @@ const app = Vue
       autoPlay() {
         this.intervalTimerArray.push(setInterval((function() {
           ++this.countUp;
-          this.displayWords = this.getWord(this.autoSpeed[this.index.speed[0]], this.allWords[this.random10WordsIndex[this.randomNo]]);
+          this.displayWords = this.getWord(this.autoSpeed[this.speedRangeIndex], this.allWords[this.random10WordsIndex[this.randomNo]]);
         }).bind(this), 1000));
       },
       getWord(aAutoSpeed, aDisplayWordArray) {
         if(this.countUp<aAutoSpeed[0]) {
-          return (!this.index.order[0]) ? aDisplayWordArray[0] : aDisplayWordArray[1];
+          return (!this.index.order) ? aDisplayWordArray[0] : aDisplayWordArray[1];
         }
         if(this.countUp<aAutoSpeed[1]) {
-          return (!this.index.order[0]) ? aDisplayWordArray[1] : aDisplayWordArray[0];
+          return (!this.index.order) ? aDisplayWordArray[1] : aDisplayWordArray[0];
         }
         if(this.countUp<aAutoSpeed[2]) {
-          return (!this.index.order[0]) ? aDisplayWordArray[2] : aDisplayWordArray[3];
+          return (!this.index.order) ? aDisplayWordArray[2] : aDisplayWordArray[3];
         }
         if(this.countUp<aAutoSpeed[3]) {
-          return (!this.index.order[0]) ? aDisplayWordArray[3] : aDisplayWordArray[2];
+          return (!this.index.order) ? aDisplayWordArray[3] : aDisplayWordArray[2];
         }
         this.randomNo = this.getRandomIndex();
         this.countUp = 0;
-        return (!this.index.order[0]) ? this.allWords[this.random10WordsIndex[this.randomNo]][0] : this.allWords[this.random10WordsIndex[this.randomNo]][1];
+        return (!this.index.order) ? this.allWords[this.random10WordsIndex[this.randomNo]][0] : this.allWords[this.random10WordsIndex[this.randomNo]][1];
       },
       onStop() {
         this.index.stopped = [this.num.stopped=1-this.num.stopped,1-this.num.stopped];
@@ -300,12 +307,6 @@ const app = Vue
       },
       getRandomIndex() {
         return parseInt(Math.random() * this.random10WordsIndex.length);
-      },
-      onChangeSpeed() {
-        this.index.speed = [this.num.speed=1-this.num.speed,1-this.num.speed];
-      },
-      onReverse() {
-        this.index.order = [this.num.order=1-this.num.order,1-this.num.order];
       },
       onAlreadyMemorized() {
         // 自動再生を止める
@@ -348,6 +349,9 @@ const app = Vue
         this.isManual = true;
         this.isAuto = false;
         this.isCorrectArray = [];
+        this.manualIndex.cnt = 0;
+        this.manualIndex.cnt2 = 0;
+        this.isQuestion = true;
         this.updateIsNowPlaying(true);
         this.updateIsDisplaySelect(false);
       },
@@ -469,7 +473,7 @@ const app = Vue
         wordList: '#wordList'
       }
     },
-    template: `<div id="top">
+    template: `<div>
       <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">

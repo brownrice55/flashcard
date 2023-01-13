@@ -5,3 +5,4 @@ package.json
 postcss.config.js
 webpack.config.js
 vue.js
+vue-scrollto.js

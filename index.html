@@ -9,7 +9,7 @@
   <body>
 
     <div class="v-container" v-cloak>
-      <ul class="nav" v-if="getAllWords.length>=10 && !isNowPlaying">
+      <ul class="nav" v-if="getAllWords.length>=10 && !isNowPlaying" id="top">
         <li v-for="(page, key) in pages" @click="onClick(key)">{{ page }}</li>
       </ul>
       <keep-alive>
