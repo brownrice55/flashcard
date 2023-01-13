@@ -47,8 +47,8 @@ const app = Vue
       onClick(aKey) {
         this.current = aKey;
       },
-      updateIsNowPlaying() {
-        this.isNowPlaying = !this.isNowPlaying;
+      updateIsNowPlaying(aBoolean) {
+        this.isNowPlaying = aBoolean;
       }
     },
     computed: {
@@ -75,17 +75,51 @@ const app = Vue
   .component('page-memorize', {
     data() {
       return {
-        name: ''
+        name: '',
+        getNum: '5',
+        isDisplaySelect: true,
+        allWords: this.getAllWords,
+        nums: [],
       }
     },
-    template: `<div>
-    <h2>単語を覚える</h2>
-    <p>単語を１０個覚えましょう。</p>
+    provide() {
+      return {
+        isDisplaySelect: Vue.computed(()=>this.isDisplaySelect),
+        updateIsDisplaySelect: this.updateIsDisplaySelect,
+        getNum: Vue.computed(()=>this.getNum),
+      }
+    },
+    inject: [ 'getAllWords' ],
+    template: `<div class="container">
+    <h2>単語を覚えよう</h2>
+    <div v-if="isDisplaySelect">
+      単語をいくつ覚えますか？
+      <select v-model.number="getNum" class="selectNum">
+        <option v-for="n in nums" :key="n">{{ n }}</option>
+      </select>
+      個
+    </div>
     <memorize-vocabulary></memorize-vocabulary>
-    </div>`
+    </div>`,
+    created() {
+      let allWordsLength = Math.floor(this.allWords.length/5);
+      this.getNums(allWordsLength);
+    },
+    methods: {
+      updateIsDisplaySelect(aBoolean) {
+        this.isDisplaySelect = aBoolean;
+      },
+      getNums(aAllWordsLength) {
+        let nums = [];
+        for(let cnt=0;cnt<aAllWordsLength;++cnt) {
+          nums.push(cnt*5+5);
+        }
+        this.nums = nums;
+      }
+    }
   })
   .component('memorize-vocabulary', {
-    inject: [ 'getAllWords', 'isNowPlaying', 'updateIsNowPlaying' ],
+    inject: [ 'getAllWords', 'isNowPlaying', 'updateIsNowPlaying', 'isDisplaySelect', 'updateIsDisplaySelect', 'getNum' ],
     data() {
       return {
         isAuto: false,
@@ -136,7 +170,8 @@ const app = Vue
         ],
         isUnselected: true,
         questionWord: '',
-        questionWordArray: ['単語', '文章']
+        questionWordArray: ['単語', '文章'],
+        memorizeWordNum: this.getNum
       }
     },
     mounted() {
@@ -146,7 +181,7 @@ const app = Vue
       <div class="displayWords" v-if="isAuto">
         <template v-if="isComplete">
           <p>単語を全て覚えました。覚えた単語は下記です。</p>
-          <ul>
+          <ul class="resultList">
             <li v-for="word in alreadyMemorized10Words">{{ word[0] }} - {{ word[1] }}</li>
           </ul>
         </template>
@@ -166,7 +201,7 @@ const app = Vue
               <button @click="onAlreadyMemorized" :disabled="isStopped">もう覚えた</button>
               <button @click="onStop">{{ label.stopped[index.stopped[0]] }}</button>
               <p><small>再生中の単語を覚えたと思ったら、「もう覚えた」ボタンを押してね。</small></p>
-              <p><small>覚えた単語 {{ alreadyMemorized10Words.length }}/10個</small></p>
+              <p><small>覚えた単語 {{ alreadyMemorized10Words.length }}/{{ memorizeWordNum }}個</small></p>
             </template>
           </div>
         </template>
@@ -174,7 +209,7 @@ const app = Vue
       <div v-if="isManual">
         <template v-if="isComplete">
           <p>正答率 {{ percent }}%</p>
-          <ul>
+          <ul class="resultList">
             <li v-for="(word, index) in random10WordsIndex" :key="word">
               <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2])] }}</span>　{{ allWords[word][0] }} - {{ allWords[word][1] }}</p>
               <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2+1])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2+1])] }}</span>　{{ allWords[word][2] }} - {{ allWords[word][3] }}</p>
@@ -224,7 +259,8 @@ const app = Vue
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
         this.displayWords = this.allWords[this.random10WordsIndex[this.randomNo]][0];
-        this.updateIsNowPlaying();
+        this.updateIsNowPlaying(true);
+        this.updateIsDisplaySelect(false);
         this.autoPlay();
       },
       autoPlay() {
@@ -296,19 +332,24 @@ const app = Vue
         }
       },
       onPlayAgain() {
+        if(this.isAuto && this.intervalTimerArray.length>0) {
+          clearInterval(this.intervalTimerArray.shift());
+        }
         this.isComplete = false;
         this.isAuto = false;
         this.isManual = false;
         this.isUnselected = true;
         this.alreadyMemorized10Words = [];
         this.getRandom10WordsIndex();
-        this.updateIsNowPlaying();
+        this.updateIsNowPlaying(false);
+        this.updateIsDisplaySelect(true);
       },
       onManualPlay() {
         this.isManual = true;
         this.isAuto = false;
         this.isCorrectArray = [];
-        this.updateIsNowPlaying();
+        this.updateIsNowPlaying(true);
+        this.updateIsDisplaySelect(false);
       },
       onSelectOrder(aOrder) {
         this.isUnselected = false;
@@ -343,7 +384,7 @@ const app = Vue
         }
 
         // 10個出し終わったら、正誤表を出す
-        if(this.isCorrectArray.length===20) {
+        if(this.isCorrectArray.length===Number(this.memorizeWordNum)*2) {
           this.isComplete = true;
           this.manualIndex.cnt = 0;
           this.percent = this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100;
@@ -362,19 +403,19 @@ const app = Vue
         let alreadyMemorizedWords = this.allWords.filter(data=>data[4]);
         let notYetMemorizedWords = this.allWords.filter(data=>!data[4]);
 
-        if(notYetMemorizedWords.length<10) {
-          //まだ覚えていない単語が10個より少ない時
+        if(notYetMemorizedWords.length<Number(this.memorizeWordNum)) {
+          //まだ覚えていない単語が選択した数より少ない時
           // 覚えた単語の日付の古いものから取得する
           alreadyMemorizedWords.sort(
             function(a,b) {
               return a[4] > b[4] ? 1 : -1;
             }
           );
-          let additionArrayLength = 10-notYetMemorizedWords.length;
+          let additionArrayLength = Number(this.memorizeWordNum)-notYetMemorizedWords.length;
           getRandom10Words = notYetMemorizedWords.concat(alreadyMemorizedWords.slice(0,additionArrayLength));
         }
         else {
-          for(let cnt=0,len=notYetMemorizedWords.length;cnt<10;++cnt,--len) {
+          for(let cnt=0,len=notYetMemorizedWords.length;cnt<Number(this.memorizeWordNum);++cnt,--len) {
             randomIndex = Math.floor( Math.random() * len);
             getRandom10Words.push(notYetMemorizedWords.splice(randomIndex,1)[0]);
           }
