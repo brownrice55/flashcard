@@ -23,9 +23,12 @@ body {
   color: #c00;
 }
 .list {
+  display: flex;
+  flex-wrap: wrap;
   li {
     cursor: pointer;
     padding: 0 0 10px 0;
+    width: 45%;
   }
 }
 .displayWords {
@@ -67,4 +70,11 @@ body {
 }
 .complete__icon--again {
   color: #999;
+}
+.btn--right {
+  float: right;
+  margin: 0 10px 10px 0;
+  button {
+    padding: 4px;
+  }
 }

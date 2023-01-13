@@ -32,37 +32,40 @@ const app = Vue
           'memorize': '単語を覚える',
           'register': '単語を登録する'
         },
-        getAllWords : []
+        getAllWords : [],
+        isNowPlaying: false
       };
     },
     provide() {
       return {
-        getAllWords: Vue.computed(()=>this.getAllWords)
+        getAllWords: Vue.computed(()=>this.getAllWords),
+        isNowPlaying: Vue.computed(()=>this.isNowPlaying),
+        updateIsNowPlaying: this.updateIsNowPlaying
       }
     },
     methods: {
       onClick(aKey) {
         this.current = aKey;
+      },
+      updateIsNowPlaying() {
+        this.isNowPlaying = !this.isNowPlaying;
       }
     },
     computed: {
       currentPage() {
         return `page-${this.current}`;
-      },
+      }
     },
     created() {
       let getAllWords = JSON.parse(localStorage.getItem('allWords')) || [];
 
       if(getAllWords.length<10) {
         this.current = 'register';
-        //***　後で対応　この場合は「単語を覚える」のナビも表示させない
       }
 
       // 最初に覚えたものと覚えていないものを分けた後に、ランダムで最大10個抜き出す
-      // indexで判定しても良いかも？　***後で検討
-      getAllWords.forEach(function(word,index){
-        word[5] = index;
-      });
+      // 通し番号を入れておく
+      getAllWords.forEach((word,index) => word[5] = index);
       localStorage.setItem('allWords', JSON.stringify(getAllWords));
 
       this.getAllWords = getAllWords;
@@ -82,7 +85,7 @@ const app = Vue
     </div>`
   })
   .component('memorize-vocabulary', {
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'isNowPlaying', 'updateIsNowPlaying' ],
     data() {
       return {
         isAuto: false,
@@ -133,7 +136,7 @@ const app = Vue
         ],
         isUnselected: true,
         questionWord: '',
-        questionWordArray: ['単語', '文章'],
+        questionWordArray: ['単語', '文章']
       }
     },
     mounted() {
@@ -209,6 +212,9 @@ const app = Vue
           <button @click="onAutoPlay">自動再生</button>
           <button @click="onManualPlay">テスト形式</button>
         </div>
+        <div class="displayWords__commonBtn" v-else>
+          <button @click="onPlayAgain">最初からやり直す</button>
+        </div>
       </template>
     `,
     methods: {
@@ -218,6 +224,7 @@ const app = Vue
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
         this.displayWords = this.allWords[this.random10WordsIndex[this.randomNo]][0];
+        this.updateIsNowPlaying();
         this.autoPlay();
       },
       autoPlay() {
@@ -295,11 +302,13 @@ const app = Vue
         this.isUnselected = true;
         this.alreadyMemorized10Words = [];
         this.getRandom10WordsIndex();
+        this.updateIsNowPlaying();
       },
       onManualPlay() {
         this.isManual = true;
         this.isAuto = false;
         this.isCorrectArray = [];
+        this.updateIsNowPlaying();
       },
       onSelectOrder(aOrder) {
         this.isUnselected = false;
@@ -337,7 +346,7 @@ const app = Vue
         if(this.isCorrectArray.length===20) {
           this.isComplete = true;
           this.manualIndex.cnt = 0;
-          this.percent = this.isCorrectArray.filter(data=>data).length/20*100;
+          this.percent = this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100;
           localStorage.setItem('allWords', JSON.stringify(this.allWords));
         }
         else {
@@ -358,7 +367,7 @@ const app = Vue
           // 覚えた単語の日付の古いものから取得する
           alreadyMemorizedWords.sort(
             function(a,b) {
-              return a[4] < b[4] ? 1 : -1;
+              return a[4] > b[4] ? 1 : -1;
             }
           );
           let additionArrayLength = 10-notYetMemorizedWords.length;
@@ -415,10 +424,12 @@ const app = Vue
         alert: ['','','',''],
         isDisabled: true,
         isAdded: false,
-        allWords: this.getAllWords
+        allWords: this.getAllWords,
+        wordList: '#wordList'
       }
     },
-    template: `<div>
+    template: `<div id="top">
+      <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">
         <dt>単語<small class="required">※必須 {{ alert[0] }}</small></dt>
@@ -426,11 +437,13 @@ const app = Vue
         <dt>単語の意味<small class="required">※必須 {{ alert[1] }}</small></dt>
         <dd><input type="text" size="30" v-model="input[1]" /><br /><small>例）りんご</small></dd>
         <dt>例文<small class="required">※必須 {{ alert[2] }}</small></dt>
-        <dd><textarea cols="50" rows="3" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
+        <dd><textarea cols="30" rows="5" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
         <dt>例文の意味<small class="required">※必須 {{ alert[3] }}</small></dt>
-        <dd><textarea cols="50" rows="3" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
+        <dd><textarea cols="30" rows="5" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
       </dl>
-      <button @click="onRegister" :disabled="isDisabled">単語を登録する</button>
+      <div class="displayWords__btn">
+        <button @click="onRegister" :disabled="isDisabled">単語を登録する</button>
+      </div>
     </div>`,
     watch: {
       input: {
@@ -466,10 +479,11 @@ const app = Vue
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
-        allWords: this.getAllWords
+        allWords: this.getAllWords,
+        top: '#top'
       }
     },
-    template: `<div>
+    template: `<div v-if="allWords.length>=10" id="wordList">
       <h3>まだ覚えていない単語</h3>
       <ul class="list">
         <template v-for="(word, index) in allWords" :key="word">
@@ -482,6 +496,7 @@ const app = Vue
         <li v-if="word[4]" @click="onEdit(index)">{{ word[0] }}</li>
         </template>
       </ul>
+      <div class="btn--right"><button v-scroll-to="top">ページトップへ</button></div>
     </div>`,
     methods: {
       onEdit(aIndex) {
@@ -512,18 +527,20 @@ const app = Vue
         <dt>単語の意味<small class="required">※必須 {{ alert[1] }}</small></dt>
         <dd><input type="text" size="30" v-model="input[1]" /><br /><small>例）りんご</small></dd>
         <dt>例文<small class="required">※必須 {{ alert[2] }}</small></dt>
-        <dd><textarea cols="50" rows="3" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
+        <dd><textarea cols="40" rows="5" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
         <dt>例文の意味<small class="required">※必須 {{ alert[3] }}</small></dt>
-        <dd><textarea cols="50" rows="3" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
+        <dd><textarea cols="40" rows="5" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
         <dt></dt>
         <dd>
           <label><input type="checkbox" v-model="hasAlreadyMemorized" @change="onChangeCheck" />この単語を覚えた</label>
           <template v-if="hasAlreadyMemorized">（{{ registerDate }}）</template>
         </dd>
       </dl>
-      <button @click="onChange(editIndex)" :disabled="isDisabled">変更を保存する</button>
-      <button @click="onUnchange()">変更せずに一覧に戻る</button><br />
-      <button @click="onDelete(editIndex)">この単語を削除する</button>
+      <div class="displayWords__btn">
+        <button @click="onChange(editIndex)" :disabled="isDisabled">変更を保存する</button>
+        <button @click="onUnchange()">変更をキャンセルする</button><br />
+        <button @click="onDelete(editIndex)">この単語を削除する</button>
+      </div>
     </div>`,
     watch: {
       input: {
@@ -568,4 +585,5 @@ const app = Vue
     },
     mixins: [ formAlerts, getNowData ]
   })
+  .use(VueScrollTo)
   .mount('.v-container');
