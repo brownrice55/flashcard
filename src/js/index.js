@@ -37,12 +37,27 @@ const app = Vue
         isNowPlaying: false,
         voiceArray: [
           ['日本語', 'ja-JP'],
-          ['英語（アメリカ）', 'en-US'],
           ['英語（イギリス）', 'en-GB'],
+          ['英語（アメリカ）', 'en-US'],
+          ['英語（オーストラリア）', 'en-AU'],
+          ['英語（インド）', 'en-IN'],
+          ['フランス語', 'fr-FR'],
           ['イタリア語', 'it-IT'],
+          ['ドイツ語', 'de-DE'],
+          ['スペイン語', 'es-ES'],
+          ['ギリシャ語', 'el-GR'],
+          ['韓国語', 'ko-KR'],
+          ['ロシア語', 'ru-RU'],
+          ['中国語（中国）', 'zh-CN'],
+          ['中国語（台湾）', 'zh-TW'],
+          ['中国語（香港）', 'zh-HK'],
+          ['アラビア語', 'ar-SA'],
         ],
         getSelectVoices: [],
-        unsupported: 'このブラウザは音声に対応していません'
+        getSelectVoicesOnOff: [],
+        unsupported: 'このブラウザは音声に対応していません。',
+        getNotYetMemorizedWords: [],
+        getAlreadyMemorizedWords: [],
       };
     },
     provide() {
@@ -52,7 +67,11 @@ const app = Vue
         updateIsNowPlaying: this.updateIsNowPlaying,
         getSelectVoices: Vue.computed(()=>this.getSelectVoices),
         getSelectVoicesOnOff: Vue.computed(()=>this.getSelectVoicesOnOff),
-        voiceArray: this.voiceArray
+        voiceArray: this.voiceArray,
+        updateAllWords: this.updateAllWords,
+        getAlreadyMemorizedWords:  Vue.computed(()=>this.getAlreadyMemorizedWords),
+        getNotYetMemorizedWords:  Vue.computed(()=>this.getNotYetMemorizedWords),
+        updateSelectVoices: this.updateSelectVoices
       }
     },
     methods: {
@@ -61,6 +80,24 @@ const app = Vue
       },
       updateIsNowPlaying(aBoolean) {
         this.isNowPlaying = aBoolean;
+      },
+      updateAllWords(aAllWords) {
+        this.getAllWordsPlusNo();
+      },
+      getAllWordsPlusNo() {
+        if(this.getAllWords.length<10) {
+          this.current = 'register';
+        }
+        // 通し番号を入れておく
+        this.getAllWords.forEach((word,index) => word[5] = index);
+        localStorage.setItem('allWords', JSON.stringify(this.getAllWords));
+
+        // 覚えたものと覚えていないものを分ける
+        this.getAlreadyMemorizedWords = this.getAllWords.filter(data=>data[4]);
+        this.getNotYetMemorizedWords = this.getAllWords.filter(data=>!data[4]);
+      },
+      updateSelectVoices(aSelectVoicesOnOff) {
+        this.getSelectVoicesOnOff = aSelectVoicesOnOff;
       }
     },
     computed: {
@@ -69,18 +106,9 @@ const app = Vue
       }
     },
     created() {
-      let getAllWords = JSON.parse(localStorage.getItem('allWords')) || [];
+      this.getAllWords = JSON.parse(localStorage.getItem('allWords')) || [];
 
-      if(getAllWords.length<10) {
-        this.current = 'register';
-      }
-
-      // 最初に覚えたものと覚えていないものを分けた後に、ランダムで最大10個抜き出す
-      // 通し番号を入れておく
-      getAllWords.forEach((word,index) => word[5] = index);
-      localStorage.setItem('allWords', JSON.stringify(getAllWords));
-
-      this.getAllWords = getAllWords;
+      this.getAllWordsPlusNo();
 
       if('speechSynthesis' in window) {//音声対応のブラウザの時に取得
         let getSelectVoices = JSON.parse(localStorage.getItem('voices')) || ['ja-JP', 'en-GB', 'ja-JP', 'en-GB'];
@@ -90,14 +118,14 @@ const app = Vue
         this.getSelectVoicesOnOff = getSelectVoicesOnOff;
       }
       else {
-        let getSelectVoices = [];
-        let getSelectVoicesOnOff = [];
+        this.getSelectVoices = [];
+        this.getSelectVoicesOnOff = [];
         delete this.pages.settings;
       }
-
     },
-  })
-  .component('page-memorize', {
+  });
+  app.config.unwrapInjectedRef = true;
+  app.component('page-memorize', {
     data() {
       return {
         name: '',
@@ -105,6 +133,8 @@ const app = Vue
         isDisplaySelect: true,
         allWords: this.getAllWords,
         nums: [],
+        isOnOrOff: '',
+        selectVoicesOnOff: this.getSelectVoicesOnOff
       }
     },
     provide() {
@@ -114,7 +144,7 @@ const app = Vue
         getNum: Vue.computed(()=>this.getNum),
       }
     },
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'getSelectVoicesOnOff' ],
     template: `<div>
     <h2>単語を覚えよう</h2>
     <div v-if="isDisplaySelect">
@@ -125,26 +155,33 @@ const app = Vue
       個
     </div>
     <memorize-vocabulary></memorize-vocabulary>
+    <p v-if="selectVoicesOnOff.length>0" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
     </div>`,
     created() {
-      let allWordsLength = Math.floor(this.allWords.length/5);
-      this.getNums(allWordsLength);
+      this.nums = this.getNums();
+      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
+    },
+    activated() {
+      this.nums = this.getNums();
+      this.allWords = this.getAllWords;
+      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
     },
     methods: {
       updateIsDisplaySelect(aBoolean) {
         this.isDisplaySelect = aBoolean;
       },
-      getNums(aAllWordsLength) {
+      getNums() {
+        let allWordsLength = Math.floor(this.allWords.length/5);
         let nums = [];
-        for(let cnt=0;cnt<aAllWordsLength;++cnt) {
+        for(let cnt=0;cnt<allWordsLength;++cnt) {
           nums.push(cnt*5+5);
         }
-        this.nums = nums;
+        return nums;
       }
     }
   })
   .component('memorize-vocabulary', {
-    inject: [ 'getAllWords', 'isNowPlaying', 'updateIsNowPlaying', 'isDisplaySelect', 'updateIsDisplaySelect', 'getNum', 'getSelectVoices', 'getSelectVoicesOnOff' ],
+    inject: [ 'getAllWords', 'isNowPlaying', 'updateIsNowPlaying', 'isDisplaySelect', 'updateIsDisplaySelect', 'getNum', 'getSelectVoices', 'getSelectVoicesOnOff', 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords', 'updateAllWords' ],
     data() {
       return {
         isAuto: false,
@@ -201,6 +238,8 @@ const app = Vue
         selectVoices: this.getSelectVoices,
         selectVoicesOnOff : this.getSelectVoicesOnOff,
         volumeClass: '',
+        notYetMemorizedWords: this.getNotYetMemorizedWords,
+        alreadyMemorizedWords: this.getAlreadyMemorizedWords
       }
     },
     mounted() {
@@ -307,15 +346,20 @@ const app = Vue
       },
       autoPlay() {
         this.intervalTimerArray.push(setInterval((function() {
-          ++this.countUp;
           this.displayWords = this.getWord(this.autoSpeed[this.speedRangeIndex], this.allWords[this.random10WordsIndex[this.randomNo]], this.orderIndexArray[this.index.order]);
-          if(this.selectVoices.length>0) {
-            this.getReadAloud(this.autoSpeed[this.speedRangeIndex], this.orderIndexArray[this.index.order]);
-          }
+          new Promise(resolve => {
+            if(this.selectVoices.length>0) {
+              this.getReadAloud(this.autoSpeed[this.speedRangeIndex], this.orderIndexArray[this.index.order]);
+            }
+            resolve();
+          }).then(()=> {
+            ++this.countUp;
+          });
+
         }).bind(this), 1000));
       },
       getReadAloud(aAutoSpeed, aOrderIndexArray) {
-        if(this.countUp===1) {
+        if(this.countUp===0) {
           this.getReadAloudState(aOrderIndexArray, 0);
         }
         else if(this.countUp===aAutoSpeed[0]) {
@@ -330,8 +374,8 @@ const app = Vue
       },
       getReadAloudState(aOrderIndexArray, aIndex) {
         if(this.selectVoicesOnOff[aOrderIndexArray[aIndex]]) {
-          this.onReadAloud(aIndex);
           this.volumeClass = 'fa-volume-up';
+          this.onReadAloud(aIndex);
         }
         else {
           this.volumeClass = '';
@@ -350,9 +394,9 @@ const app = Vue
         if(this.countUp<aAutoSpeed[3]) {
           return aDisplayWordArray[aOrderIndexArray[3]];
         }
+        this.volumeClass = (this.selectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
-        this.volumeClass = (this.selectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         return this.allWords[this.random10WordsIndex[this.randomNo]][0];
       },
       onStop() {
@@ -387,6 +431,7 @@ const app = Vue
         if(!this.random10WordsIndex.length) {
           // 10wordsが空になった場合は、「下記の単語を全て覚えました」と、alreadyMemorized10Wordsを表示する
           this.isComplete = true;
+          this.updateAllWords(this.allWords);
         }
         else {
           // 残った単語で自動再生を始める
@@ -458,6 +503,7 @@ const app = Vue
           this.manualIndex.cnt = 0;
           this.percent = this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100;
           localStorage.setItem('allWords', JSON.stringify(this.allWords));
+          this.updateAllWords(this.allWords);
         }
         else {
           this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
@@ -482,8 +528,8 @@ const app = Vue
         let randomIndex = 0;
         let getRandom10Words = [];
 
-        let alreadyMemorizedWords = this.allWords.filter(data=>data[4]);
-        let notYetMemorizedWords = this.allWords.filter(data=>!data[4]);
+        let alreadyMemorizedWords = this.alreadyMemorizedWords;
+        let notYetMemorizedWords = this.notYetMemorizedWords;
 
         if(notYetMemorizedWords.length<Number(this.memorizeWordNum)) {
           //まだ覚えていない単語が選択した数より少ない時
@@ -540,7 +586,7 @@ const app = Vue
     }
   })
   .component('register-new',{
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'updateAllWords' ],
     data() {
       return {
         input: ['','','',''],
@@ -584,7 +630,6 @@ const app = Vue
     },
     methods: {
       onRegister() {
-        // 下記の新規登録した際の通し番号をどう入れる？　***後で検討
         this.input[4] = 0;
         this.input[5] = '';
 
@@ -593,32 +638,41 @@ const app = Vue
 
         this.input = ['','','',''];
         this.isAdded = true;
+        this.updateAllWords(this.allWords);
       }
     },
     mixins: [ formAlerts ]
   })
   .component('register-list',{
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
         allWords: this.getAllWords,
-        top: '#top'
+        top: '#top',
+        notYetMemorizedWords: this.getNotYetMemorizedWords,
+        alreadyMemorizedWords: this.getAlreadyMemorizedWords
       }
     },
     template: `<div v-if="allWords.length>=10" id="wordList">
       <h3>まだ覚えていない単語</h3>
-      <ul class="list">
-        <template v-for="(word, index) in allWords" :key="word">
-        <li v-if="!word[4]" @click="onEdit(index)">{{ word[0] }}</li>
-        </template>
-      </ul>
+      <template v-if="notYetMemorizedWords.length>0">
+        <ul class="list">
+          <li v-for="word in notYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
+        </ul>
+      </template>
+      <template v-else>
+        <p class="attention">登録された単語でまだ覚えていない単語はありません。</p>
+      </template>
       <h3>既に覚えた単語</h3>
-      <ul class="list">
-        <template v-for="(word, index) in allWords" :key="word">
-        <li v-if="word[4]" @click="onEdit(index)">{{ word[0] }}</li>
-        </template>
-      </ul>
+      <template v-if="alreadyMemorizedWords.length>0">
+        <ul class="list">
+          <li v-for="word in alreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
+        </ul>
+      </template>
+      <template v-else>
+        <p class="attention">登録された単語で既に覚えた単語はありません。</p>
+      </template>
       <div class="btn--right"><button v-scroll-to="top">ページトップへ</button></div>
     </div>`,
     methods: {
@@ -628,7 +682,7 @@ const app = Vue
     }
   })
   .component('list-edit',{
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'updateAllWords' ],
     props: [ 'editIndex' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
@@ -685,6 +739,7 @@ const app = Vue
         this.allWords.splice(aEditIndex,1,inputData);
         localStorage.setItem('allWords', JSON.stringify(this.allWords));
         this.$emit('judgeIsNotEdit');
+        this.updateAllWords(this.allWords);
       },
       onUnchange() {
         this.$emit('judgeIsNotEdit');
@@ -693,6 +748,7 @@ const app = Vue
         this.allWords.splice(aEditIndex,1);
         localStorage.setItem('allWords', JSON.stringify(this.allWords));
         this.$emit('judgeIsNotEdit');
+        this.updateAllWords(this.allWords);
       },
       judgeDisabled() {
         let inputRegisterData = (this.hasAlreadyMemorized) ? this.registerDate : 0;
@@ -709,7 +765,7 @@ const app = Vue
     mixins: [ formAlerts, getNowData ]
   })
   .component('page-settings', {
-    inject: [ 'getSelectVoices', 'voiceArray', 'getSelectVoicesOnOff' ],
+    inject: [ 'getSelectVoices', 'voiceArray', 'getSelectVoicesOnOff', 'updateSelectVoices' ],
     data() {
       return {
         selectVoices: this.getSelectVoices,
@@ -719,52 +775,27 @@ const app = Vue
         selectVoicesOld: this.computedSelectVoices,
         initialValue: [],
         initialValueOnOff: [],
+        attention: '',
+        selectVoicesTitle: ['単語', '単語の意味', '例文', '例文の意味']
       }
     },
     template: `<div>
       <h3>音声の設定</h3>
       <dl class="form">
-        <dt>単語</dt>
-        <dd>
-          <select v-model="selectVoices[0]">
-            <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
-          </select>
-          <label class="voicesOnOff">
-            <input type="checkbox" v-model="selectVoicesOnOff[0]" :checked="selectVoicesOnOff[0]" @change="onChangeOnOff">
-            <span>自動再生：音声{{ selectVoicesOnOffText(selectVoicesOnOff[0]) }}</span>
-          </label>
-        </dd>
-        <dt>単語の意味</dt>
-        <dd>
-          <select v-model="selectVoices[1]">
-            <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
-          </select>
-          <label class="voicesOnOff">
-            <input type="checkbox" v-model="selectVoicesOnOff[1]" :checked="selectVoicesOnOff[1]" @change="onChangeOnOff">
-            <span>自動再生：音声{{ selectVoicesOnOffText(selectVoicesOnOff[1]) }}</span>
-          </label>
-        </dd>
-        <dt>例文</dt>
-        <dd>
-          <select v-model="selectVoices[2]">
-            <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
-          </select>
-          <label class="voicesOnOff">
-            <input type="checkbox" v-model="selectVoicesOnOff[2]" :checked="selectVoicesOnOff[2]" @change="onChangeOnOff">
-            <span>自動再生：音声{{ selectVoicesOnOffText(selectVoicesOnOff[2]) }}</span>
-          </label>
-        </dd>
-        <dt>例文の意味</dt>
-        <dd>
-          <select v-model="selectVoices[3]">
-            <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
-          </select>
-          <label class="voicesOnOff">
-            <input type="checkbox" v-model="selectVoicesOnOff[3]" :checked="selectVoicesOnOff[3]" @change="onChangeOnOff">
-            <span>自動再生：音声{{ selectVoicesOnOffText(selectVoicesOnOff[3]) }}</span>
-          </label>
-        </dd>
+        <template v-for="(title, index) in selectVoicesTitle" :key="title">
+          <dt>{{ title }}</dt>
+          <dd>
+            <select v-model="selectVoices[index]">
+              <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
+            </select>
+            <label class="voicesOnOff">
+              <input type="checkbox" :input-value="selectVoicesOnOff[index]" :checked="selectVoicesOnOff[index]" @change="onChangeOnOff(index)">
+              <span>自動再生：音声{{ selectVoicesOnOffText(selectVoicesOnOff[index]) }}</span>
+            </label>
+          </dd>
+        </template>
       </dl>
+      <p v-if="attention" class="attention">{{ attention }}</p>
       <div class="displayWords__btn">
         <button @click="onSet" :disabled="isDisabled">設定を変更する</button>
       </div>
@@ -782,13 +813,20 @@ const app = Vue
       onSet() {
         localStorage.setItem('voices', JSON.stringify(this.selectVoices));
         localStorage.setItem('voicesOnOff', JSON.stringify(this.selectVoicesOnOff));
+        this.isDisabled = true;
+        this.initialValue = this.selectVoices.map(obj=>obj);
+        this.initialValueOnOff = this.selectVoicesOnOff.map(obj=>obj);
+        this.updateSelectVoices(this.selectVoicesOnOff);
+        this.attention = '';
       },
-      judgeDisabled(aBoolean) {
+      judgeDisabled() {
         let isDisabled = (this.initialValue.toString()===this.selectVoices.toString()) ? true : false;
         let isDisabledOnOff = (this.initialValueOnOff.toString()===this.selectVoicesOnOff.toString()) ? true : false;
         this.isDisabled = (isDisabled && isDisabledOnOff) ? true : false;
+        this.attention = (this.isDisabled) ? '' : '変更を反映するためには「設定を変更する」ボタンを押してください。';
       },
-      onChangeOnOff() {
+      onChangeOnOff(aIndex) {
+        this.selectVoicesOnOff[aIndex] = !this.selectVoicesOnOff[aIndex];
         this.judgeDisabled();
       }
     },

@@ -16,7 +16,7 @@
       <keep-alive>
         <component :is="currentPage"></component>
       </keep-alive>
-      <p v-if="getSelectVoices.length<1">{{ unsupported }}</p>
+      <p v-if="getSelectVoicesOnOff.length<1" class="attention">{{ unsupported }}</p>
     </div>
 
     <script src="https://unpkg.com/vue@3"></script>
