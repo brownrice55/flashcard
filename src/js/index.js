@@ -82,6 +82,7 @@ const app = Vue
         this.isNowPlaying = aBoolean;
       },
       updateAllWords(aAllWords) {
+        this.allWords = aAllWords;
         this.getAllWordsPlusNo();
       },
       getAllWordsPlusNo() {
@@ -92,9 +93,24 @@ const app = Vue
         this.getAllWords.forEach((word,index) => word[5] = index);
         localStorage.setItem('allWords', JSON.stringify(this.getAllWords));
 
+
+        let getNotYetMemorizedWords = [];
+        let getAlreadyMemorizedWords = [];
         // 覚えたものと覚えていないものを分ける
-        this.getAlreadyMemorizedWords = this.getAllWords.filter(data=>data[4]);
-        this.getNotYetMemorizedWords = this.getAllWords.filter(data=>!data[4]);
+        new Promise(resolve => {
+          for(let cnt=0,len=this.getAllWords.length;cnt<len;++cnt) {
+            if(this.getAllWords[cnt][4]) {
+              getAlreadyMemorizedWords.push(this.getAllWords[cnt]);
+            }
+            else {
+              getNotYetMemorizedWords.push(this.getAllWords[cnt]);
+            }
+          }
+          resolve();
+        }).then(()=> {
+          this.getAlreadyMemorizedWords = getAlreadyMemorizedWords;
+          this.getNotYetMemorizedWords = getNotYetMemorizedWords;
+        });
       },
       updateSelectVoices(aSelectVoicesOnOff) {
         this.getSelectVoicesOnOff = aSelectVoicesOnOff;
@@ -133,18 +149,16 @@ const app = Vue
         isDisplaySelect: true,
         allWords: this.getAllWords,
         nums: [],
-        isOnOrOff: '',
-        selectVoicesOnOff: this.getSelectVoicesOnOff
       }
     },
     provide() {
       return {
         isDisplaySelect: Vue.computed(()=>this.isDisplaySelect),
         updateIsDisplaySelect: this.updateIsDisplaySelect,
-        getNum: Vue.computed(()=>this.getNum),
+        getNum: Vue.computed(()=>this.getNum)
       }
     },
-    inject: [ 'getAllWords', 'getSelectVoicesOnOff' ],
+    inject: [ 'getAllWords' ],
     template: `<div>
     <h2>単語を覚えよう</h2>
     <div v-if="isDisplaySelect">
@@ -155,16 +169,13 @@ const app = Vue
       個
     </div>
     <memorize-vocabulary></memorize-vocabulary>
-    <p v-if="selectVoicesOnOff.length>0" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
     </div>`,
     created() {
       this.nums = this.getNums();
-      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
     },
     activated() {
       this.nums = this.getNums();
       this.allWords = this.getAllWords;
-      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
     },
     methods: {
       updateIsDisplaySelect(aBoolean) {
@@ -234,16 +245,12 @@ const app = Vue
         isUnselected: true,
         questionWord: '',
         questionWordArray: ['単語', '文章'],
-        memorizeWordNum: this.getNum,
+        memorizeWordNum: 5,
         selectVoices: this.getSelectVoices,
         selectVoicesOnOff : this.getSelectVoicesOnOff,
         volumeClass: '',
-        notYetMemorizedWords: this.getNotYetMemorizedWords,
-        alreadyMemorizedWords: this.getAlreadyMemorizedWords
+        isOnOrOff: '',
       }
-    },
-    mounted() {
-      this.getRandom10WordsIndex();
     },
     template: `
       <div class="displayWords" v-if="isAuto">
@@ -322,15 +329,32 @@ const app = Vue
       </template>
       <template v-else>
         <div class="displayWords__commonBtn" v-if="!isAuto && !isManual">
-          <button @click="onAutoPlay">自動再生</button>
-          <button @click="onManualPlay">テスト形式</button>
+          <button @click="onStart('auto')">自動再生</button>
+          <button @click="onStart('manual')">テスト形式</button>
         </div>
         <div class="displayWords__commonBtn" v-else>
           <button @click="onPlayAgain">最初からやり直す</button>
         </div>
       </template>
+      <p v-if="selectVoicesOnOff.length>0 && !isNowPlaying" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
     `,
+    mounted() {
+      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
+    },
+    activated() {
+      this.isOnOrOff = (this.selectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
+    },
     methods: {
+      onStart(aType) {
+        this.memorizeWordNum = this.getNum;
+        this.random10WordsIndex = this.getRandom10WordsIndex();
+        if(aType==='auto') {
+          this.onAutoPlay();
+        }
+        else {
+          this.onManualPlay();
+        }
+      },
       onAutoPlay() {
         this.isAuto = true;
         this.isManual = false;
@@ -427,7 +451,6 @@ const app = Vue
         // 該当する単語をalreadyMemorized10Wordsにプッシュして10wordsから削除する
         this.alreadyMemorized10Words.push(this.allWords[this.random10WordsIndex[this.randomNo]]);
         this.random10WordsIndex.splice(this.randomNo, 1);
-
         if(!this.random10WordsIndex.length) {
           // 10wordsが空になった場合は、「下記の単語を全て覚えました」と、alreadyMemorized10Wordsを表示する
           this.isComplete = true;
@@ -448,7 +471,6 @@ const app = Vue
         this.isManual = false;
         this.isUnselected = true;
         this.alreadyMemorized10Words = [];
-        this.getRandom10WordsIndex();
         this.updateIsNowPlaying(false);
         this.updateIsDisplaySelect(true);
       },
@@ -528,8 +550,8 @@ const app = Vue
         let randomIndex = 0;
         let getRandom10Words = [];
 
-        let alreadyMemorizedWords = this.alreadyMemorizedWords;
-        let notYetMemorizedWords = this.notYetMemorizedWords;
+        let alreadyMemorizedWords = this.getAlreadyMemorizedWords;
+        let notYetMemorizedWords = this.getNotYetMemorizedWords;
 
         if(notYetMemorizedWords.length<Number(this.memorizeWordNum)) {
           //まだ覚えていない単語が選択した数より少ない時
@@ -550,7 +572,7 @@ const app = Vue
         }
 
         let getRandom10WordsIndex = getRandom10Words.map(data=>data=data[5]);
-        this.random10WordsIndex = getRandom10WordsIndex;
+        return getRandom10WordsIndex;
       }
     },
     mixins: [ getNowData ]
@@ -650,24 +672,22 @@ const app = Vue
       return {
         allWords: this.getAllWords,
         top: '#top',
-        notYetMemorizedWords: this.getNotYetMemorizedWords,
-        alreadyMemorizedWords: this.getAlreadyMemorizedWords
       }
     },
     template: `<div v-if="allWords.length>=10" id="wordList">
       <h3>まだ覚えていない単語</h3>
-      <template v-if="notYetMemorizedWords.length>0">
+      <template v-if="getNotYetMemorizedWords.length>0">
         <ul class="list">
-          <li v-for="word in notYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
+          <li v-for="word in getNotYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
       </template>
       <template v-else>
         <p class="attention">登録された単語でまだ覚えていない単語はありません。</p>
       </template>
       <h3>既に覚えた単語</h3>
-      <template v-if="alreadyMemorizedWords.length>0">
+      <template v-if="getAlreadyMemorizedWords.length>0">
         <ul class="list">
-          <li v-for="word in alreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
+          <li v-for="word in getAlreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
       </template>
       <template v-else>
