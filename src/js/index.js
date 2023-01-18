@@ -309,7 +309,7 @@ const app = Vue
             <p class="displayWords__word">
               {{ displayWords }}
               <template v-if="selectVoices.length>0">
-                <span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
+                <br><span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
               </template>
             </p>
             <div v-if="isQuestion" class="displayWords__btn">
@@ -323,8 +323,11 @@ const app = Vue
         </template>
       </div>
       <template v-if="isComplete">
-        <div class="displayWords__commonBtn">
-          <button @click="onPlayAgain">もう一度チャレンジする</button>
+        <div v-if="isAuto" class="displayWords__commonBtn">
+          <button @click="onPlayAgain">上記を覚えた単語にセットする</button>
+        </div>
+        <div v-else class="displayWords__commonBtn">
+          <button @click="onPlayAgain">上記の単語の正誤をセットする</button>
         </div>
       </template>
       <template v-else>
@@ -523,7 +526,7 @@ const app = Vue
         if(this.isCorrectArray.length===Number(this.memorizeWordNum)*2) {
           this.isComplete = true;
           this.manualIndex.cnt = 0;
-          this.percent = this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100;
+          this.percent = Math.round(this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100);
           localStorage.setItem('allWords', JSON.stringify(this.allWords));
           this.updateAllWords(this.allWords);
         }
@@ -611,8 +614,8 @@ const app = Vue
     inject: [ 'getAllWords', 'updateAllWords' ],
     data() {
       return {
-        input: ['','','',''],
-        alert: ['','','',''],
+        input: Array(4).fill(''),
+        alert: Array(4).fill(''),
         isDisabled: true,
         isAdded: false,
         allWords: this.getAllWords,
@@ -620,6 +623,7 @@ const app = Vue
       }
     },
     template: `<div>
+      <p v-if="allWords.length<10" class="attention">最初に10個以上、単語を登録してください。</p>
       <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">
@@ -658,7 +662,7 @@ const app = Vue
         this.allWords.push(this.input);
         localStorage.setItem('allWords', JSON.stringify(this.allWords));
 
-        this.input = ['','','',''];
+        this.input = Array(4).fill('');
         this.isAdded = true;
         this.updateAllWords(this.allWords);
       }
@@ -666,32 +670,41 @@ const app = Vue
     mixins: [ formAlerts ]
   })
   .component('register-list',{
-    inject: [ 'getAllWords', 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords' ],
+    inject: [ 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
-        allWords: this.getAllWords,
         top: '#top',
+        notYetMemorizedWords: this.getNotYetMemorizedWords,
+        alreadyMemorizedWords: this.alreadyMemorizedWords
       }
     },
-    template: `<div v-if="allWords.length>=10" id="wordList">
-      <h3>まだ覚えていない単語</h3>
+    created() {
+      this.notYetMemorizedWords = this.getNotYetMemorizedWords;
+      this.alreadyMemorizedWords = this.getAlreadyMemorizedWords;
+    },
+    activated() {
+      this.notYetMemorizedWords = this.getNotYetMemorizedWords;
+      this.alreadyMemorizedWords = this.getAlreadyMemorizedWords;
+    },
+    template: `<div id="wordList">
+      <h3>覚えていない単語</h3>
       <template v-if="getNotYetMemorizedWords.length>0">
         <ul class="list">
           <li v-for="word in getNotYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
       </template>
       <template v-else>
-        <p class="attention">登録された単語でまだ覚えていない単語はありません。</p>
+        <p class="attention">まだ覚えていない単語はありません。</p>
       </template>
-      <h3>既に覚えた単語</h3>
+      <h3>覚えた単語</h3>
       <template v-if="getAlreadyMemorizedWords.length>0">
         <ul class="list">
           <li v-for="word in getAlreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
       </template>
       <template v-else>
-        <p class="attention">登録された単語で既に覚えた単語はありません。</p>
+        <p class="attention">既に覚えた単語はありません。</p>
       </template>
       <div class="btn--right"><button v-scroll-to="top">ページトップへ</button></div>
     </div>`,
@@ -711,7 +724,7 @@ const app = Vue
         hasAlreadyMemorized: false,
         registerDate: 0,
         isDisabled: true,
-        alert: [ '','','','' ],
+        alert: Array(4).fill(''),
         isAuto: this.isAuto,
         input : []
       }
