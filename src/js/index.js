@@ -257,6 +257,7 @@ const app = Vue
         selectVoicesOnOff : this.getSelectVoicesOnOff,
         volumeClass: '',
         isOnOrOff: '',
+        doneWordsNum: 0
       }
     },
     template: `
@@ -319,12 +320,15 @@ const app = Vue
                 <br><span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
               </template>
             </p>
-            <div v-if="isQuestion" class="displayWords__btn">
-              <button @click="onNext">次へ</button>
-            </div>
-            <div v-else class="displayWords__btn">
-              <button @click="onJudge(true)">正解</button>
-              <button @click="onJudge(false)">不正解</button>
+            <div class="displayWords__btn">
+              <template v-if="isQuestion">
+                <button @click="onNext">次へ</button>
+              </template>
+              <template v-else>
+                <button @click="onJudge(true)">正解</button>
+                <button @click="onJudge(false)">不正解</button>
+              </template>
+              <p><small>現在 {{ doneWordsNum }}/{{ memorizeWordNum }}個目</small></p>
             </div>
           </div>
         </template>
@@ -489,6 +493,7 @@ const app = Vue
         this.isCorrectArray = [];
         this.manualIndex.cnt = 0;
         this.manualIndex.cnt2 = 0;
+        this.doneWordsNum = 0;
         this.isQuestion = true;
         this.volumeClass = 'fa-volume-off';
         this.updateIsNowPlaying(true);
@@ -517,6 +522,7 @@ const app = Vue
         let isCorrectArrayNow = this.isCorrectArray.slice(-2);
         if(this.isCorrectArray.length%2===0) {
           this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][4] = (isCorrectArrayNow[0] && isCorrectArrayNow[1]) ? this.getNow() : 0;
+          ++this.doneWordsNum;
         }
 
         // 次の表示のための準備
@@ -528,10 +534,11 @@ const app = Vue
           this.manualIndex.cnt2 = 2;
         }
 
-        // 10個出し終わったら、正誤表を出す
+        // 全部問題を出し終わったら、正誤表を出す
         if(this.isCorrectArray.length===Number(this.memorizeWordNum)*2) {
           this.isComplete = true;
           this.manualIndex.cnt = 0;
+          this.doneWordsNum = 0;
           this.percent = Math.round(this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100);
           localStorage.setItem('allWords', JSON.stringify(this.allWords));
           this.updateAllWords(this.allWords);
