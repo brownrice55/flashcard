@@ -58,6 +58,12 @@ const app = Vue
         unsupported: 'このブラウザは音声に対応していません。',
         getNotYetMemorizedWords: [],
         getAlreadyMemorizedWords: [],
+        formText: [
+          { title: '単語', example:'apple'},
+          { title: '単語の意味', example:'りんご'},
+          { title: '例文', example:'I like apples.'},
+          { title: '例文の意味', example:'私はりんごが好きです。'},
+        ]
       };
     },
     provide() {
@@ -71,7 +77,8 @@ const app = Vue
         updateAllWords: this.updateAllWords,
         getAlreadyMemorizedWords:  Vue.computed(()=>this.getAlreadyMemorizedWords),
         getNotYetMemorizedWords:  Vue.computed(()=>this.getNotYetMemorizedWords),
-        updateSelectVoices: this.updateSelectVoices
+        updateSelectVoices: this.updateSelectVoices,
+        formText: this.formText
       }
     },
     methods: {
@@ -323,11 +330,10 @@ const app = Vue
         </template>
       </div>
       <template v-if="isComplete">
-        <div v-if="isAuto" class="displayWords__commonBtn">
-          <button @click="onPlayAgain">上記を覚えた単語にセットする</button>
-        </div>
-        <div v-else class="displayWords__commonBtn">
-          <button @click="onPlayAgain">上記の単語の正誤をセットする</button>
+        <div class="displayWords__commonBtn">
+          <button @click="onPlayAgain">上記の単語をセットして終了する</button>
+          <p v-if="isAuto" class="attention">全て「覚えた単語」にセットされます。</p>
+          <p v-else class="attention">「正」は「覚えた単語」、「誤」は「覚えていない単語」にセットされます。</p>
         </div>
       </template>
       <template v-else>
@@ -611,7 +617,7 @@ const app = Vue
     }
   })
   .component('register-new',{
-    inject: [ 'getAllWords', 'updateAllWords' ],
+    inject: [ 'getAllWords', 'updateAllWords', 'formText' ],
     data() {
       return {
         input: Array(4).fill(''),
@@ -627,14 +633,11 @@ const app = Vue
       <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">
-        <dt>単語<small class="required">※必須 {{ alert[0] }}</small></dt>
-        <dd><input type="text" size="30" v-model="input[0]" /><br /><small>例）apple</small></dd>
-        <dt>単語の意味<small class="required">※必須 {{ alert[1] }}</small></dt>
-        <dd><input type="text" size="30" v-model="input[1]" /><br /><small>例）りんご</small></dd>
-        <dt>例文<small class="required">※必須 {{ alert[2] }}</small></dt>
-        <dd><textarea cols="30" rows="5" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
-        <dt>例文の意味<small class="required">※必須 {{ alert[3] }}</small></dt>
-        <dd><textarea cols="30" rows="5" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
+      <template v-for="(f,index) in formText" :key="f.title">
+        <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
+        <dd v-if="index<2"><input type="text" size="30" v-model="input[index]" /><br /><small>例）{{ f.example }}</small></dd>
+        <dd v-else><textarea cols="30" rows="5" v-model="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
+      </template>
       </dl>
       <div class="displayWords__btn">
         <button @click="onRegister" :disabled="isDisabled">単語を登録する</button>
@@ -670,22 +673,15 @@ const app = Vue
     mixins: [ formAlerts ]
   })
   .component('register-list',{
-    inject: [ 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords' ],
+    inject: [ 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords', 'updateAllWords' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
         top: '#top',
-        notYetMemorizedWords: this.getNotYetMemorizedWords,
-        alreadyMemorizedWords: this.alreadyMemorizedWords
       }
     },
-    created() {
-      this.notYetMemorizedWords = this.getNotYetMemorizedWords;
-      this.alreadyMemorizedWords = this.getAlreadyMemorizedWords;
-    },
     activated() {
-      this.notYetMemorizedWords = this.getNotYetMemorizedWords;
-      this.alreadyMemorizedWords = this.getAlreadyMemorizedWords;
+      this.updateAllWords(this.allWords);
     },
     template: `<div id="wordList">
       <h3>覚えていない単語</h3>
@@ -715,7 +711,7 @@ const app = Vue
     }
   })
   .component('list-edit',{
-    inject: [ 'getAllWords', 'updateAllWords' ],
+    inject: [ 'getAllWords', 'updateAllWords', 'formText' ],
     props: [ 'editIndex' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
@@ -732,14 +728,11 @@ const app = Vue
     template: `<div>
       <h3>単語の編集</h3>
       <dl class="form">
-        <dt>単語<small class="required">※必須 {{ alert[0] }}</small></dt>
-        <dd><input type="text" size="30" v-model="input[0]" /><br /><small>例）apple</small></dd>
-        <dt>単語の意味<small class="required">※必須 {{ alert[1] }}</small></dt>
-        <dd><input type="text" size="30" v-model="input[1]" /><br /><small>例）りんご</small></dd>
-        <dt>例文<small class="required">※必須 {{ alert[2] }}</small></dt>
-        <dd><textarea cols="40" rows="5" v-model="input[2]"></textarea><br><small>例）I like apples.</small></dd>
-        <dt>例文の意味<small class="required">※必須 {{ alert[3] }}</small></dt>
-        <dd><textarea cols="40" rows="5" v-model="input[3]"></textarea><br><small>例）私はりんごが好きです。</small></dd>
+        <template v-for="(f,index) in formText" :key="f.title">
+          <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
+          <dd v-if="index<2"><input type="text" size="30" v-model="input[index]" /><br /><small>例）{{ f.example }}</small></dd>
+          <dd v-else><textarea cols="30" rows="5" v-model="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
+        </template>
         <dt></dt>
         <dd>
           <label><input type="checkbox" v-model="hasAlreadyMemorized" @change="onChangeCheck" />この単語を覚えた</label>
@@ -798,7 +791,7 @@ const app = Vue
     mixins: [ formAlerts, getNowData ]
   })
   .component('page-settings', {
-    inject: [ 'getSelectVoices', 'voiceArray', 'getSelectVoicesOnOff', 'updateSelectVoices' ],
+    inject: [ 'getSelectVoices', 'voiceArray', 'getSelectVoicesOnOff', 'updateSelectVoices', 'formText' ],
     data() {
       return {
         selectVoices: this.getSelectVoices,
@@ -808,15 +801,14 @@ const app = Vue
         selectVoicesOld: this.computedSelectVoices,
         initialValue: [],
         initialValueOnOff: [],
-        attention: '',
-        selectVoicesTitle: ['単語', '単語の意味', '例文', '例文の意味']
+        attention: ''
       }
     },
     template: `<div>
       <h3>音声の設定</h3>
       <dl class="form">
-        <template v-for="(title, index) in selectVoicesTitle" :key="title">
-          <dt>{{ title }}</dt>
+        <template v-for="(f, index) in formText" :key="f.title">
+          <dt>{{ f.title }}</dt>
           <dd>
             <select v-model="selectVoices[index]">
               <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
