@@ -89,17 +89,19 @@ const app = Vue
         this.isNowPlaying = aBoolean;
       },
       updateAllWords(aAllWords) {
-        this.allWords = aAllWords;
-        this.getAllWordsPlusNo();
+        this.getAndSetAllWordsPlusNo(aAllWords);
       },
-      getAllWordsPlusNo() {
+      getAndSetAllWordsPlusNo(aAllWords) {
+        this.getAllWords = aAllWords;
+
         if(this.getAllWords.length<10) {
           this.current = 'register';
         }
         // 通し番号を入れておく
         this.getAllWords.forEach((word,index) => word[5] = index);
-        localStorage.setItem('allWords', JSON.stringify(this.getAllWords));
 
+        // ローカルストレージにセットする
+        localStorage.setItem('allWords', JSON.stringify(this.getAllWords));
 
         let getNotYetMemorizedWords = [];
         let getAlreadyMemorizedWords = [];
@@ -131,7 +133,7 @@ const app = Vue
     created() {
       this.getAllWords = JSON.parse(localStorage.getItem('allWords')) || [];
 
-      this.getAllWordsPlusNo();
+      this.getAndSetAllWordsPlusNo(this.getAllWords);
 
       if('speechSynthesis' in window) {//音声対応のブラウザの時に取得
         let getSelectVoices = JSON.parse(localStorage.getItem('voices')) || ['ja-JP', 'en-GB', 'ja-JP', 'en-GB'];
@@ -154,7 +156,6 @@ const app = Vue
         name: '',
         getNum: '5',
         isDisplaySelect: true,
-        allWords: this.getAllWords,
         nums: [],
       }
     },
@@ -165,7 +166,7 @@ const app = Vue
         getNum: Vue.computed(()=>this.getNum)
       }
     },
-    inject: [ 'getAllWords' ],
+    inject: [ 'getAllWords', 'updateAllWords' ],
     template: `<div>
     <h2>単語を覚えよう</h2>
     <div v-if="isDisplaySelect">
@@ -182,14 +183,14 @@ const app = Vue
     },
     activated() {
       this.nums = this.getNums();
-      this.allWords = this.getAllWords;
+      this.updateAllWords(this.getAllWords);
     },
     methods: {
       updateIsDisplaySelect(aBoolean) {
         this.isDisplaySelect = aBoolean;
       },
       getNums() {
-        let allWordsLength = Math.floor(this.allWords.length/5);
+        let allWordsLength = Math.floor(this.getAllWords.length/5);
         let nums = [];
         for(let cnt=0;cnt<allWordsLength;++cnt) {
           nums.push(cnt*5+5);
@@ -204,7 +205,7 @@ const app = Vue
       return {
         isAuto: false,
         isManual: false,
-        random10WordsIndex: [],
+        randomWordsIndex: [],
         displayWords: '',
         intervalTimerArray: [],
         countUp: 0,
@@ -231,7 +232,6 @@ const app = Vue
         randomNo: 0,
         alreadyMemorized10Words: [],
         isComplete: false,
-        allWords: this.getAllWords,
         isStopped: false,
         isQuestion: true,
         isCorrectArray: [],
@@ -300,9 +300,9 @@ const app = Vue
         <template v-if="isComplete">
           <p>正答率 {{ percent }}%</p>
           <ul class="resultList">
-            <li v-for="(word, index) in random10WordsIndex" :key="word">
-              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2])] }}</span>　{{ allWords[word][0] }} - {{ allWords[word][1] }}</p>
-              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2+1])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2+1])] }}</span>　{{ allWords[word][2] }} - {{ allWords[word][3] }}</p>
+            <li v-for="(word, index) in randomWordsIndex" :key="word">
+              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2])] }}</span>　{{ getAllWords[word][0] }} - {{ getAllWords[word][1] }}</p>
+              <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2+1])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2+1])] }}</span>　{{ getAllWords[word][2] }} - {{ getAllWords[word][3] }}</p>
             </li>
           </ul>
         </template>
@@ -335,9 +335,7 @@ const app = Vue
       </div>
       <template v-if="isComplete">
         <div class="displayWords__commonBtn">
-          <button @click="onPlayAgain">上記の単語をセットして終了する</button>
-          <p v-if="isAuto" class="attention">全て「覚えた単語」にセットされます。</p>
-          <p v-else class="attention">「正」は「覚えた単語」、「誤」は「覚えていない単語」にセットされます。</p>
+          <button @click="onPlayAgain"><template v-if="isAuto">自動再生</template><template v-else>テスト</template>を終了する</button>
         </div>
       </template>
       <template v-else>
@@ -360,7 +358,7 @@ const app = Vue
     methods: {
       onStart(aType) {
         this.memorizeWordNum = this.getNum;
-        this.random10WordsIndex = this.getRandom10WordsIndex();
+        this.randomWordsIndex = this.getRandomWordsIndex();
         if(aType==='auto') {
           this.onAutoPlay();
         }
@@ -373,7 +371,7 @@ const app = Vue
         this.isManual = false;
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
-        this.displayWords = this.allWords[this.random10WordsIndex[this.randomNo]][0];
+        this.displayWords = this.getAllWords[this.randomWordsIndex[this.randomNo]][0];
         if(this.selectVoices.length>0) {
           this.volumeClass = (this.selectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         }
@@ -383,7 +381,7 @@ const app = Vue
       },
       autoPlay() {
         this.intervalTimerArray.push(setInterval((function() {
-          this.displayWords = this.getWord(this.autoSpeed[this.speedRangeIndex], this.allWords[this.random10WordsIndex[this.randomNo]], this.orderIndexArray[this.index.order]);
+          this.displayWords = this.getWord(this.autoSpeed[this.speedRangeIndex], this.getAllWords[this.randomWordsIndex[this.randomNo]], this.orderIndexArray[this.index.order]);
           new Promise(resolve => {
             if(this.selectVoices.length>0) {
               this.getReadAloud(this.autoSpeed[this.speedRangeIndex], this.orderIndexArray[this.index.order]);
@@ -434,7 +432,7 @@ const app = Vue
         this.volumeClass = (this.selectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
-        return this.allWords[this.random10WordsIndex[this.randomNo]][0];
+        return this.getAllWords[this.randomWordsIndex[this.randomNo]][0];
       },
       onStop() {
         this.index.stopped = [this.num.stopped=1-this.num.stopped,1-this.num.stopped];
@@ -449,25 +447,24 @@ const app = Vue
         }
       },
       getRandomIndex() {
-        return parseInt(Math.random() * this.random10WordsIndex.length);
+        return parseInt(Math.random() * this.randomWordsIndex.length);
       },
       onAlreadyMemorized() {
         // 自動再生を止める
         clearInterval(this.intervalTimerArray.shift());
 
         // allwordsの該当する単語の[4]に現在時刻を入れる
-        this.allWords[this.random10WordsIndex[this.randomNo]][4] = this.getNow();
+        this.getAllWords[this.randomWordsIndex[this.randomNo]][4] = this.getNow();
 
-        // ローカルストレージにも反映する
-        localStorage.setItem('allWords', JSON.stringify(this.allWords));
+        // 上記の変更を全体に反映する
+        this.updateAllWords(this.getAllWords);
 
         // 該当する単語をalreadyMemorized10Wordsにプッシュして10wordsから削除する
-        this.alreadyMemorized10Words.push(this.allWords[this.random10WordsIndex[this.randomNo]]);
-        this.random10WordsIndex.splice(this.randomNo, 1);
-        if(!this.random10WordsIndex.length) {
+        this.alreadyMemorized10Words.push(this.getAllWords[this.randomWordsIndex[this.randomNo]]);
+        this.randomWordsIndex.splice(this.randomNo, 1);
+        if(!this.randomWordsIndex.length) {
           // 10wordsが空になった場合は、「下記の単語を全て覚えました」と、alreadyMemorized10Wordsを表示する
           this.isComplete = true;
-          this.updateAllWords(this.allWords);
         }
         else {
           // 残った単語で自動再生を始める
@@ -503,13 +500,13 @@ const app = Vue
         this.isUnselected = false;
         this.manualOrder = (aOrder) ? 0 : 1;//普通の順番でスタート
         this.questionWord = this.questionWordArray[0];
-        this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+        this.displayWords = this.getAllWords[this.randomWordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
       },
       onNext() {//押すとcnt2は奇数になる
         ++this.manualIndex.cnt2;
         this.isQuestion = false;
         this.volumeClass = 'fa-volume-off';
-        this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+        this.displayWords = this.getAllWords[this.randomWordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
       },
       onJudge(aIsCorrect) {//押すとcnt2はcnt2は偶数になる
         // 正解したかどうかを判定する「単語の意味を頭に思い浮かべてください」
@@ -521,7 +518,7 @@ const app = Vue
         // 両方正解したものは[4]に時刻をセットして、ローカルストレージにもセットする
         let isCorrectArrayNow = this.isCorrectArray.slice(-2);
         if(this.isCorrectArray.length%2===0) {
-          this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][4] = (isCorrectArrayNow[0] && isCorrectArrayNow[1]) ? this.getNow() : 0;
+          this.getAllWords[this.randomWordsIndex[this.manualIndex.cnt]][4] = (isCorrectArrayNow[0] && isCorrectArrayNow[1]) ? this.getNow() : 0;
           ++this.doneWordsNum;
         }
 
@@ -540,11 +537,10 @@ const app = Vue
           this.manualIndex.cnt = 0;
           this.doneWordsNum = 0;
           this.percent = Math.round(this.isCorrectArray.filter(data=>data).length/this.isCorrectArray.length*100);
-          localStorage.setItem('allWords', JSON.stringify(this.allWords));
-          this.updateAllWords(this.allWords);
+          this.updateAllWords(this.getAllWords);
         }
         else {
-          this.displayWords = this.allWords[this.random10WordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
+          this.displayWords = this.getAllWords[this.randomWordsIndex[this.manualIndex.cnt]][this.orderIndexArray[this.manualOrder][this.manualIndex.cnt2]];
           this.questionWord = (!this.manualIndex.cnt2) ? this.questionWordArray[0] : this.questionWordArray[1];
         }
       },
@@ -562,7 +558,7 @@ const app = Vue
         }
         window.speechSynthesis.speak(uttr);
       },
-      getRandom10WordsIndex() {
+      getRandomWordsIndex() {
         let randomIndex = 0;
         let getRandom10Words = [];
 
@@ -587,8 +583,8 @@ const app = Vue
           }
         }
 
-        let getRandom10WordsIndex = getRandom10Words.map(data=>data=data[5]);
-        return getRandom10WordsIndex;
+        let getRandomWordsIndex = getRandom10Words.map(data=>data=data[5]);
+        return getRandomWordsIndex;
       }
     },
     mixins: [ getNowData ]
@@ -631,12 +627,11 @@ const app = Vue
         alert: Array(4).fill(''),
         isDisabled: true,
         isAdded: false,
-        allWords: this.getAllWords,
         wordList: '#wordList'
       }
     },
     template: `<div>
-      <p v-if="allWords.length<10" class="attention">最初に10個以上、単語を登録してください。</p>
+      <p v-if="getAllWords.length<10" class="attention">最初に10個以上、単語を登録してください。</p>
       <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">
@@ -669,18 +664,17 @@ const app = Vue
         this.input[4] = 0;
         this.input[5] = '';
 
-        this.allWords.push(this.input);
-        localStorage.setItem('allWords', JSON.stringify(this.allWords));
+        this.getAllWords.push(this.input);
 
         this.input = Array(4).fill('');
         this.isAdded = true;
-        this.updateAllWords(this.allWords);
+        this.updateAllWords(this.getAllWords);
       }
     },
     mixins: [ formAlerts ]
   })
   .component('register-list',{
-    inject: [ 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords', 'updateAllWords' ],
+    inject: [ 'getNotYetMemorizedWords', 'getAlreadyMemorizedWords', 'updateAllWords', 'getAllWords' ],
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
@@ -688,7 +682,7 @@ const app = Vue
       }
     },
     activated() {
-      this.updateAllWords(this.allWords);
+      this.updateAllWords(this.getAllWords);
     },
     template: `<div id="wordList">
       <h3>覚えていない単語</h3>
@@ -723,7 +717,6 @@ const app = Vue
     emits: [ 'judgeIsNotEdit' ],
     data() {
       return {
-        allWords: this.getAllWords,
         hasAlreadyMemorized: false,
         registerDate: 0,
         isDisabled: true,
@@ -763,37 +756,39 @@ const app = Vue
     },
     methods: {
       onChangeCheck() {
-        this.registerDate = (this.hasAlreadyMemorized) ? this.getNow() : this.allWords[this.editIndex][4];
+        this.registerDate = (this.hasAlreadyMemorized) ? this.getNow() : this.getAllWords[this.editIndex][4];
         this.judgeDisabled();
       },
       onChange(aEditIndex) {
         let inputRegisterData = (this.hasAlreadyMemorized) ? this.registerDate : 0;
-        let inputData = this.input.concat([inputRegisterData, this.allWords[aEditIndex][5]]);
-        this.allWords.splice(aEditIndex,1,inputData);
-        localStorage.setItem('allWords', JSON.stringify(this.allWords));
+        let inputData = this.input.concat([inputRegisterData, this.getAllWords[aEditIndex][5]]);
+        this.getAllWords.splice(aEditIndex,1,inputData);
         this.$emit('judgeIsNotEdit');
-        this.updateAllWords(this.allWords);
+        this.updateAllWords(this.getAllWords);
       },
       onUnchange() {
         this.$emit('judgeIsNotEdit');
       },
       onDelete(aEditIndex) {
-        this.allWords.splice(aEditIndex,1);
-        localStorage.setItem('allWords', JSON.stringify(this.allWords));
+        this.getAllWords.splice(aEditIndex,1);
         this.$emit('judgeIsNotEdit');
-        this.updateAllWords(this.allWords);
+        this.updateAllWords(this.getAllWords);
       },
       judgeDisabled() {
         let inputRegisterData = (this.hasAlreadyMemorized) ? this.registerDate : 0;
-        let changedArray = this.input.concat([inputRegisterData, this.allWords[this.editIndex][5]]);
-        let isChanged = (changedArray.toString()!==this.allWords[this.editIndex].toString()) ? true : false;
-        this.isDisabled = (isChanged || Boolean(this.allWords[this.editIndex][4])!==this.hasAlreadyMemorized) ? false : true;
+        let changedArray = this.input.concat([inputRegisterData, this.getAllWords[this.editIndex][5]]);
+        let isChanged = (changedArray.toString()!==this.getAllWords[this.editIndex].toString()) ? true : false;
+        this.isDisabled = (isChanged || Boolean(this.getAllWords[this.editIndex][4])!==this.hasAlreadyMemorized) ? false : true;
+        let isAlert = this.input.some(val=>!val) ? true : false;
+        if(isAlert) {
+          this.isDisabled = true;
+        }
       }
     },
     mounted() {
-      this.hasAlreadyMemorized = this.allWords[this.editIndex][4] ? true : false;
-      this.registerDate = this.allWords[this.editIndex][4] ? this.allWords[this.editIndex][4] : 0;
-      this.input = this.allWords[this.editIndex].slice(0,4);
+      this.hasAlreadyMemorized = this.getAllWords[this.editIndex][4] ? true : false;
+      this.registerDate = this.getAllWords[this.editIndex][4] ? this.getAllWords[this.editIndex][4] : 0;
+      this.input = this.getAllWords[this.editIndex].slice(0,4);
     },
     mixins: [ formAlerts, getNowData ]
   })
@@ -805,7 +800,6 @@ const app = Vue
         selectVoicesOnOff: this.getSelectVoicesOnOff,
         selectVoicesOnOffText: (aBoolean) => aBoolean ? 'オン' : 'オフ',
         isDisabled: true,
-        selectVoicesOld: this.computedSelectVoices,
         initialValue: [],
         initialValueOnOff: [],
         attention: ''
@@ -863,7 +857,7 @@ const app = Vue
       }
     },
     created() {
-      this.initialValue = this.selectVoices.map(obj=>obj);
+      this.initialValue = this.getSelectVoices.map(obj=>obj);
       this.initialValueOnOff = this.selectVoicesOnOff.map(obj=>obj);
     }
   })
