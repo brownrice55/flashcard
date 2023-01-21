@@ -127,3 +127,15 @@ body {
 .attention {
   font-size: 80%;
 }
+.wordList__title {
+  margin: 50px 0 0;
+  border-top: 1px dashed #ccc;
+  padding: 20px 0 0;
+}
+.wordList__total {
+  font-size: 80%;
+  color: #666;
+  background: #eee;
+  width: 90%;
+  margin: 10px auto;
+}

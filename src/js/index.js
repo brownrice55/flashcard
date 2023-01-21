@@ -311,8 +311,8 @@
         </template>
         <template v-else>
           <div class="displayWords__btn" v-if="isUnselected">
-            <button @click="onSelectOrder(true)">単語の意味を覚えたかテスト<br />単語→意味の順番</button>
-            <button @click="onSelectOrder(false)">意味から単語が分かるかテスト<br />意味→単語の順番</button>
+            <button @click="onSelectOrder(true)">単語の意味を覚えたかテスト<br>単語→意味の順番</button>
+            <button @click="onSelectOrder(false)">意味から単語が分かるかテスト<br>意味→単語の順番</button>
           </div>
           <div class="displayWords" v-else>
             <p v-if="isQuestion">下記の<template v-if="this.manualOrder">意味の</template>{{ questionWord }}<template v-if="!this.manualOrder">の意味</template>を思い浮かべてから、「次へ」を押してください。</p>
@@ -352,7 +352,7 @@
       </template>
       <p v-if="getSelectVoicesOnOff.length>0 && !isNowPlaying" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
     `,
-    mounted() {
+    created() {
       this.isOnOrOff = (this.getSelectVoicesOnOff.some(val=>val)) ? 'オン' : 'オフ';
     },
     activated() {
@@ -563,31 +563,43 @@
       },
       getRandomWordsIndex() {
         let randomIndex = 0;
-        let getRandom10Words = [];
+        let getRandomWordsIndex = [];
 
-        let alreadyMemorizedWords = this.getAlreadyMemorizedWords;
-        let notYetMemorizedWords = this.getNotYetMemorizedWords;
+        let alreadyMemorizedWords = this.getAlreadyMemorizedWords.map(data=>data[5]);
+        let notYetMemorizedWords = this.getNotYetMemorizedWords.map(data=>data[5]);
 
         if(notYetMemorizedWords.length<Number(this.memorizeWordNum)) {
           //まだ覚えていない単語が選択した数より少ない時
           // 覚えた単語の日付の古いものから取得する
           alreadyMemorizedWords.sort(
             function(a,b) {
-              return a[4] > b[4] ? 1 : -1;
+              return a > b ? 1 : -1;
             }
           );
           let additionArrayLength = Number(this.memorizeWordNum)-notYetMemorizedWords.length;
-          getRandom10Words = notYetMemorizedWords.concat(alreadyMemorizedWords.slice(0,additionArrayLength));
+          let selectedWordsFromAlready = alreadyMemorizedWords.slice(0,additionArrayLength);
+          getRandomWordsIndex = notYetMemorizedWords.concat(selectedWordsFromAlready);
+          // 単語をシャッフルする
+          getRandomWordsIndex = this.shuffleWords(getRandomWordsIndex);
         }
         else {
           for(let cnt=0,len=notYetMemorizedWords.length;cnt<Number(this.memorizeWordNum);++cnt,--len) {
             randomIndex = Math.floor( Math.random() * len);
-            getRandom10Words.push(notYetMemorizedWords.splice(randomIndex,1)[0]);
+            getRandomWordsIndex.push(notYetMemorizedWords.splice(randomIndex,1)[0]);
           }
         }
-
-        let getRandomWordsIndex = getRandom10Words.map(data=>data=data[5]);
         return getRandomWordsIndex;
+      },
+      shuffleWords(aRandomWords) {
+        let randomIndex,lastWord,selectedWord;
+          for(let cnt=0,len=aRandomWords.length;cnt<len;--len) {
+            randomIndex = Math.floor(Math.random()*len);
+            lastWord = aRandomWords[len-1];
+            selectedWord = aRandomWords[randomIndex];
+            aRandomWords.splice(len-1,1,selectedWord);
+            aRandomWords.splice(randomIndex,1,lastWord);
+          }
+        return aRandomWords;
       }
     },
     mixins: [ getNowData ]
@@ -635,13 +647,13 @@
     },
     template: `<div>
       <p v-if="getAllWords.length<10" class="attention">最初に10個以上、単語を登録してください。</p>
-      <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br />単語リスト</button></div>
+      <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br>単語リスト</button></div>
       <h3>新規登録</h3>
       <dl class="form">
       <template v-for="(f,index) in formText" :key="f.title">
         <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
-        <dd v-if="index<2"><input type="text" size="30" v-model="input[index]" /><br /><small>例）{{ f.example }}</small></dd>
-        <dd v-else><textarea cols="30" rows="5" v-model="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
+        <dd v-if="index<2"><input type="text" size="30" v-model.trim="input[index]" /><br><small>例）{{ f.example }}</small></dd>
+        <dd v-else><textarea cols="30" rows="5" v-model.trim="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
       </template>
       </dl>
       <div class="displayWords__btn">
@@ -688,8 +700,9 @@
       this.updateAllWords(this.getAllWords);
     },
     template: `<div id="wordList">
-      <h3>覚えていない単語</h3>
+      <h3 class="wordList__title">覚えていない単語</h3>
       <template v-if="getNotYetMemorizedWords.length>0">
+        <p class="wordList__total">{{ getNotYetMemorizedWords.length }}個</p>
         <ul class="list">
           <li v-for="word in getNotYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
@@ -697,8 +710,9 @@
       <template v-else>
         <p class="attention">まだ覚えていない単語はありません。</p>
       </template>
-      <h3>覚えた単語</h3>
+      <h3 class="wordList__title">覚えた単語</h3>
       <template v-if="getAlreadyMemorizedWords.length>0">
+        <p class="wordList__total">{{ getAlreadyMemorizedWords.length }}個</p>
         <ul class="list">
           <li v-for="word in getAlreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
@@ -733,8 +747,8 @@
       <dl class="form">
         <template v-for="(f,index) in formText" :key="f.title">
           <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
-          <dd v-if="index<2"><input type="text" size="30" v-model="input[index]" /><br /><small>例）{{ f.example }}</small></dd>
-          <dd v-else><textarea cols="30" rows="5" v-model="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
+          <dd v-if="index<2"><input type="text" size="30" v-model.trim="input[index]" /><br><small>例）{{ f.example }}</small></dd>
+          <dd v-else><textarea cols="30" rows="5" v-model.trim="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
         </template>
         <dt></dt>
         <dd>
@@ -744,7 +758,7 @@
       </dl>
       <div class="displayWords__btn">
         <button @click="onChange(editIndex)" :disabled="isDisabled">変更を保存する</button>
-        <button @click="onUnchange()">変更をキャンセルする</button><br />
+        <button @click="onUnchange()">変更をキャンセルする</button><br>
         <button @click="onDelete(editIndex)">この単語を削除する</button>
       </div>
     </div>`,
@@ -841,8 +855,10 @@
       }
     },
     created() {
+      // initialデータは値が変更しないように.mapを使って入れておく
       this.initialValue = this.getSelectVoices.map(data=>data);
       this.initialValueOnOff = this.getSelectVoicesOnOff.map(data=>data);
+      
       this.selectVoicesOnOffText = this.getSelectVoicesOnOff.map(data=>(data ? 'オン' : 'オフ'));
     }
   })
