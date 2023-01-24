@@ -6,3 +6,4 @@ postcss.config.js
 webpack.config.js
 vue.js
 vue-scrollto.js
+src/sass/_destyle.scss

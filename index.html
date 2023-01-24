@@ -11,7 +11,7 @@
 
     <div class="v-container container" v-cloak>
       <ul class="nav" v-if="getAllWords.length>=10 && !isNowPlaying" id="top">
-        <li v-for="(page, key) in pages" @click="onClick(key)">{{ page }}</li>
+        <li v-for="(page, key) in pages" @click="onClick(key)"><i class="fas" :class="listIcons[key]"></i>{{ page }}</li>
       </ul>
       <keep-alive>
         <component :is="currentPage"></component>

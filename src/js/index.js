@@ -4,7 +4,10 @@
   const formAlerts = {
     methods: {
       alerts() {
-        this.alert = this.input.map(data=>(!data ? '入力してください。' : ''));
+        for(let cnt=0,len=this.input.length;cnt<len;++cnt) {
+          this.alert[cnt] = this.input[cnt] ? '' : '入力してください';
+          this.formInputClass[cnt] = this.input[cnt] ? '' : 'input--alert';
+        }
       }
     }
   };
@@ -32,6 +35,11 @@
           'memorize': '単語を覚える',
           'register': '登録',
           'settings': '設定'
+        },
+        listIcons: {
+          'memorize': 'fa-home',
+          'register': 'fa-pen',
+          'settings': 'fa-wrench'
         },
         getAllWords: [],
         isNowPlaying: false,
@@ -173,12 +181,14 @@
     },
     inject: [ 'getAllWords', 'updateAllWords' ],
     template: `<div>
-    <h2>単語を覚えよう</h2>
-    <div v-if="isDisplaySelect">
+    <h1 class="title--h1">単語を覚えよう</h1>
+    <div v-if="isDisplaySelect" class="howmany">
       単語をいくつ覚えますか？
-      <select v-model.number="getNum" class="selectNum">
-        <option v-for="n in nums" :key="n">{{ n }}</option>
-      </select>
+      <div class="howmany__select">
+        <select v-model.number="getNum">
+          <option v-for="n in nums" :key="n">{{ n }}</option>
+        </select>
+      </div>
       個
     </div>
     <memorize-vocabulary></memorize-vocabulary>
@@ -273,13 +283,15 @@
         </template>
         <template v-else>
           <ul class="displayWords__conditions">
-            <li>表示順：
-              <select v-model="index.order">
-                <option v-for="(order,index) in label.order" :key="order" :value="index">{{ order }}</option>
-              </select>
+            <li>表示順:
+              <div  class="displayWords__select">
+                <select v-model="index.order">
+                  <option v-for="(order,index) in label.order" :key="order" :value="index">{{ order }}</option>
+                </select>
+              </div>
             </li>
-            <li>表示速度：
-              <label>遅い<input type="range" min="0" max="4" step="1" v-model="speedRangeIndex" />速い</label>
+            <li class="displayWords__conditions--speed">
+              <label><span>表示速度: <small>遅い</small></span><input class="displayWords__range" type="range" min="0" max="4" step="1" v-model="speedRangeIndex"><span><small>速い</small></span></label>
             </li>
           </ul>
           <p class="displayWords__word">
@@ -291,10 +303,12 @@
               <template v-if="isStopped">
                 <p><small>停止中</small></p>
               </template>
-              <button @click="onAlreadyMemorized" :disabled="isStopped">もう覚えた</button>
-              <button @click="onStop">{{ label.stopped[index.stopped[0]] }}</button>
-              <p><small>再生中の単語を覚えたと思ったら、「もう覚えた」ボタンを押してね。</small></p>
-              <p><small>覚えた単語 {{ alreadyMemorized10Words.length }}/{{ memorizeWordNum }}個</small></p>
+              <div class="btnWrap">
+                <button class="btnWrap--btn" @click="onAlreadyMemorized" :disabled="isStopped"><span>もう覚えた</span></button>
+                <button class="btnWrap--btn" @click="onStop"><span>{{ label.stopped[index.stopped[0]] }}</span></button>
+              </div>
+              <p class="attention">再生中の単語を覚えたと思ったら、「もう覚えた」ボタンを押してね。</p>
+              <p>覚えた単語 {{ alreadyMemorized10Words.length }}/{{ memorizeWordNum }}個</p>
             </template>
           </div>
         </template>
@@ -310,44 +324,51 @@
           </ul>
         </template>
         <template v-else>
-          <div class="displayWords__btn" v-if="isUnselected">
-            <button @click="onSelectOrder(true)">単語の意味を覚えたかテスト<br>単語→意味の順番</button>
-            <button @click="onSelectOrder(false)">意味から単語が分かるかテスト<br>意味→単語の順番</button>
-          </div>
-          <div class="displayWords" v-else>
-            <p v-if="isQuestion">下記の<template v-if="this.manualOrder">意味の</template>{{ questionWord }}<template v-if="!this.manualOrder">の意味</template>を思い浮かべてから、「次へ」を押してください。</p>
-            <p v-else>正解の時は「正解」を、間違っていたら「不正解」を押してください。</p>
-            <p class="displayWords__word">
-              {{ displayWords }}
-              <template v-if="getSelectVoices.length>0">
-                <br><span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
-              </template>
-            </p>
-            <div class="displayWords__btn">
-              <template v-if="isQuestion">
-                <button @click="onNext">次へ</button>
-              </template>
-              <template v-else>
-                <button @click="onJudge(true)">正解</button>
-                <button @click="onJudge(false)">不正解</button>
-              </template>
-              <p><small>現在 {{ doneWordsNum }}/{{ memorizeWordNum }}個目</small></p>
+          <h2 class="title--h2">テスト</h2>
+          <template v-if="isUnselected">
+            <div class="btnWrap">
+              <button class="btnWrap--btn" @click="onSelectOrder(true)"><span>単語の意味を覚えたかテスト<br>単語→意味の順番</span></button>
             </div>
-          </div>
+            <div class="btnWrap">
+              <button class="btnWrap--btn" @click="onSelectOrder(false)"><span>意味から単語が分かるかテスト<br>意味→単語の順番</span></button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="displayWords">
+              <p v-if="isQuestion">下記の<template v-if="this.manualOrder">意味の</template>{{ questionWord }}<template v-if="!this.manualOrder">の意味</template>を思い浮かべてから、「次へ」を押してください。</p>
+              <p v-else>正解の時は「正解」を、間違っていたら「不正解」を押してください。</p>
+              <p class="displayWords__word">
+                {{ displayWords }}
+                <template v-if="getSelectVoices.length>0">
+                  <br><span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
+                </template>
+              </p>
+              <div class="btnWrap">
+                <template v-if="isQuestion">
+                  <button class="btnWrap--btn" @click="onNext"><span>次へ</span></button>
+                </template>
+                <template v-else>
+                  <button class="btnWrap--btn" @click="onJudge(true)"><span>正解</span></button>
+                  <button class="btnWrap--btn" @click="onJudge(false)"><span>不正解</span></button>
+                </template>
+              </div>
+              <p>現在 {{ doneWordsNum }}/{{ memorizeWordNum }}個目</p>
+            </div>
+          </template>
         </template>
       </div>
       <template v-if="isComplete">
-        <div class="displayWords__commonBtn">
-          <button @click="onPlayAgain"><template v-if="isAuto">自動再生</template><template v-else>テスト</template>を終了する</button>
+        <div class="btnWrap">
+          <button class="btnWrap--btn" @click="onPlayAgain"><span><template v-if="isAuto">自動再生</template><template v-else>テスト</template>を終了する</span></button>
         </div>
       </template>
       <template v-else>
-        <div class="displayWords__commonBtn" v-if="!isAuto && !isManual">
-          <button @click="onStart('auto')">自動再生</button>
-          <button @click="onStart('manual')">テスト形式</button>
+        <div class="btnWrap" v-if="!isAuto && !isManual">
+          <button class="btnWrap--btn" @click="onStart('auto')"><span>自動再生</span></button>
+          <button class="btnWrap--btn" @click="onStart('manual')"><span>テスト形式</span></button>
         </div>
-        <div class="displayWords__commonBtn" v-else>
-          <button @click="onPlayAgain">最初からやり直す</button>
+        <div class="btnWrap" v-else>
+          <button class="btnWrap--btn" @click="onPlayAgain"><span>最初からやり直す</span></button>
         </div>
       </template>
       <p v-if="getSelectVoicesOnOff.length>0 && !isNowPlaying" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
@@ -619,7 +640,6 @@
     },
     template: `
     <div v-if="isNotEdit">
-      <h2>単語を登録しよう</h2>
       <register-new></register-new>
       <register-list @judgeIsNotEdit="judgeIsNotEdit"></register-list>
     </div>
@@ -642,22 +662,27 @@
         alert: Array(4).fill(''),
         isDisabled: true,
         isAdded: false,
-        wordList: '#wordList'
+        wordList: '#wordList',
+        formInputClass: Array(4).fill('')
       }
     },
     template: `<div>
+      <h2 class="title--h2">新規登録</h2>
       <p v-if="getAllWords.length<10" class="attention">最初に10個以上、単語を登録してください。</p>
-      <div class="btn--right"><button v-scroll-to="wordList">登録済みの<br>単語リスト</button></div>
-      <h3>新規登録</h3>
-      <dl class="form">
-      <template v-for="(f,index) in formText" :key="f.title">
-        <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
-        <dd v-if="index<2"><input type="text" size="30" v-model.trim="input[index]" /><br><small>例）{{ f.example }}</small></dd>
-        <dd v-else><textarea cols="30" rows="5" v-model.trim="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
-      </template>
-      </dl>
-      <div class="displayWords__btn">
-        <button @click="onRegister" :disabled="isDisabled">単語を登録する</button>
+      <div class="form">
+        <div class="form__wrap" v-for="(f,index) in formText" :key="f.title">
+          <label for="f.title" class="form__label">{{ f.title }} </label>
+          <template v-if="index<2">
+            <input type="text" size="30" v-model.trim="input[index]" :class="formInputClass[index]" :placeholder="'例）' + f.example">
+          </template>
+          <template v-else>
+            <textarea cols="30" rows="5" v-model.trim="input[index]" :class="formInputClass[index]" :placeholder="'例）' + f.example"></textarea>
+          </template>
+          <div class="required">{{ alert[index] }}</div>
+        </div>
+      </div>
+      <div class="btnWrap">
+        <button class="btnWrap--btn" @click="onRegister" :disabled="isDisabled"><span>単語を登録する</span></button>
       </div>
     </div>`,
     watch: {
@@ -694,15 +719,15 @@
     data() {
       return {
         top: '#top',
+        toTopActive: ''
       }
     },
     activated() {
       this.updateAllWords(this.getAllWords);
     },
     template: `<div id="wordList">
-      <h3 class="wordList__title">覚えていない単語</h3>
+      <h2 class="title--h2">覚えていない単語 {{ getNotYetMemorizedWords.length }}個</h2>
       <template v-if="getNotYetMemorizedWords.length>0">
-        <p class="wordList__total">{{ getNotYetMemorizedWords.length }}個</p>
         <ul class="list">
           <li v-for="word in getNotYetMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
@@ -710,9 +735,8 @@
       <template v-else>
         <p class="attention">まだ覚えていない単語はありません。</p>
       </template>
-      <h3 class="wordList__title">覚えた単語</h3>
+      <h2 class="title--h2">覚えた単語 {{ getAlreadyMemorizedWords.length }}個</h2>
       <template v-if="getAlreadyMemorizedWords.length>0">
-        <p class="wordList__total">{{ getAlreadyMemorizedWords.length }}個</p>
         <ul class="list">
           <li v-for="word in getAlreadyMemorizedWords" :key="word" @click="onEdit(word[5])">{{ word[0] }}</li>
         </ul>
@@ -720,12 +744,23 @@
       <template v-else>
         <p class="attention">既に覚えた単語はありません。</p>
       </template>
-      <div class="btn--right"><button v-scroll-to="top">ページトップへ</button></div>
+      <button class="toTop" v-scroll-to="top" :class="toTopActive">▲</button>
     </div>`,
     methods: {
       onEdit(aIndex) {
         this.$emit('judgeIsNotEdit', aIndex);
+      },
+      showToTopBtn() {
+         if(window.scrollY>400){
+           this.toTopActive = 'toTop--active';
+         }
+         else {
+           this.toTopActive = '';
+         }
       }
+    },
+    mounted() {
+      window.addEventListener("scroll", this.showToTopBtn);
     }
   })
   .component('list-edit',{
@@ -739,27 +774,37 @@
         isDisabled: true,
         alert: Array(4).fill(''),
         isAuto: this.isAuto,
-        input : []
+        input : [],
+        formInputClass: Array(4).fill('')
       }
     },
     template: `<div>
-      <h3>単語の編集</h3>
-      <dl class="form">
-        <template v-for="(f,index) in formText" :key="f.title">
-          <dt>{{ f.title }}<small class="required">※必須 {{ alert[index] }}</small></dt>
-          <dd v-if="index<2"><input type="text" size="30" v-model.trim="input[index]" /><br><small>例）{{ f.example }}</small></dd>
-          <dd v-else><textarea cols="30" rows="5" v-model.trim="input[index]"></textarea><br><small>例）{{ f.example }}</small></dd>
-        </template>
-        <dt></dt>
-        <dd>
-          <label><input type="checkbox" v-model="hasAlreadyMemorized" @change="onChangeCheck" />この単語を覚えた</label>
-          <template v-if="hasAlreadyMemorized">（{{ registerDate }}）</template>
-        </dd>
-      </dl>
-      <div class="displayWords__btn">
-        <button @click="onChange(editIndex)" :disabled="isDisabled">変更を保存する</button>
-        <button @click="onUnchange()">変更をキャンセルする</button><br>
-        <button @click="onDelete(editIndex)">この単語を削除する</button>
+      <h2 class="title--h2">単語の編集</h2>
+      <div class="form">
+        <div class="form__wrap" v-for="(f,index) in formText" :key="f.title">
+          <label for="f.title" class="form__label">{{ f.title }} </label>
+          <template v-if="index<2">
+            <input type="text" size="30" v-model.trim="input[index]" :class="formInputClass[index]" :placeholder="'例）' + f.example">
+          </template>
+          <template v-else>
+            <textarea cols="30" rows="5" v-model.trim="input[index]" :class="formInputClass[index]" :placeholder="'例）' + f.example"></textarea>
+          </template>
+          <div class="required">{{ alert[index] }}</div>
+        </div>
+        <div>
+          <label class="form__input">
+            <input type="checkbox" class="form__input--input" v-model="hasAlreadyMemorized" @change="onChangeCheck">
+            <span class="form__input--inputDummy"></span>
+            <span class="form__input--text">この単語を覚えた<template v-if="hasAlreadyMemorized">（{{ registerDate }}）</template></span>
+          </label>
+        </div>
+      </div>
+      <div class="btnWrap">
+        <button class="btnWrap--btn" @click="onChange(editIndex)" :disabled="isDisabled"><span>変更を保存する</span></button>
+        <button class="btnWrap--btn" @click="onUnchange()"><span>変更をキャンセルする</span></button>
+      </div>
+      <div class="btnWrap">
+        <button class="btnWrap--btn" @click="onDelete(editIndex)"><span>この単語を削除する</span></button>
       </div>
     </div>`,
     watch: {
@@ -820,18 +865,21 @@
       }
     },
     template: `<div>
-      <h3>音声の設定</h3>
+      <h2 class="title--h2">音声の設定</h2>
       <dl class="form">
         <template v-for="(f, index) in formText" :key="f.title">
-          <dt>{{ f.title }}</dt>
+          <dt class="form__title">{{ f.title }}</dt>
           <dd>
-            <select v-model="getSelectVoices[index]">
-              <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
-            </select>
-            <label class="voicesOnOff">
-              <input type="checkbox" :input-value="getSelectVoicesOnOff[index]" :checked="getSelectVoicesOnOff[index]" @change="onChangeOnOff(index)">
-              <span>自動再生：音声{{ selectVoicesOnOffText[index] }}</span>
-            </label>
+            <div class="form__select">
+              <select v-model="getSelectVoices[index]">
+                <option v-for="v in voiceArray" :key="v" :value="v[1]">{{ v[0] }}</option>
+              </select>
+              <label class="form__input">
+                <input type="checkbox" class="form__input--input" :input-value="getSelectVoicesOnOff[index]" :checked="getSelectVoicesOnOff[index]" @change="onChangeOnOff(index)">
+                <span class="form__input--inputDummy"></span>
+                <span class="form__input--text">自動再生：音声{{ selectVoicesOnOffText[index] }}</span>
+              </label>
+            </div>
           </dd>
         </template>
       </dl>
@@ -858,7 +906,7 @@
       // initialデータは値が変更しないように.mapを使って入れておく
       this.initialValue = this.getSelectVoices.map(data=>data);
       this.initialValueOnOff = this.getSelectVoicesOnOff.map(data=>data);
-      
+
       this.selectVoicesOnOffText = this.getSelectVoicesOnOff.map(data=>(data ? 'オン' : 'オフ'));
     }
   })
