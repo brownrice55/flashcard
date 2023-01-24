@@ -305,9 +305,11 @@
               </template>
               <div class="btnWrap">
                 <button class="btnWrap--btn" @click="onAlreadyMemorized" :disabled="isStopped"><span>もう覚えた</span></button>
+              </div>
+              <div class="btnWrap">
                 <button class="btnWrap--btn" @click="onStop"><span>{{ label.stopped[index.stopped[0]] }}</span></button>
               </div>
-              <p class="attention">再生中の単語を覚えたと思ったら、「もう覚えた」ボタンを押してね。</p>
+              <p class="attention">再生中の単語を覚えたら「もう覚えた」ボタンを押してね。</p>
               <p>覚えた単語 {{ alreadyMemorized10Words.length }}/{{ memorizeWordNum }}個</p>
             </template>
           </div>
@@ -315,7 +317,7 @@
       </div>
       <div v-if="isManual">
         <template v-if="isComplete">
-          <p>正答率 {{ percent }}%</p>
+          <h2 class="title--h2">テストの正答率 {{ percent }}%</h2>
           <ul class="resultList">
             <li v-for="(word, index) in randomWordsIndex" :key="word">
               <p><span class="complete__icon" :class="isCorrectLabel.class[judgeCorrectIndex(isCorrectArray[index*2])]">{{ isCorrectLabel.text[judgeCorrectIndex(isCorrectArray[index*2])] }}</span>　{{ getAllWords[word][0] }} - {{ getAllWords[word][1] }}</p>
@@ -326,11 +328,13 @@
         <template v-else>
           <h2 class="title--h2">テスト</h2>
           <template v-if="isUnselected">
-            <div class="btnWrap">
-              <button class="btnWrap--btn" @click="onSelectOrder(true)"><span>単語の意味を覚えたかテスト<br>単語→意味の順番</span></button>
-            </div>
-            <div class="btnWrap">
-              <button class="btnWrap--btn" @click="onSelectOrder(false)"><span>意味から単語が分かるかテスト<br>意味→単語の順番</span></button>
+            <div>
+              <div class="btnWrap">
+                <button class="btnWrap--btn" @click="onSelectOrder(true)"><span>単語の意味を覚えたかテスト<br>単語→意味の順番</span></button>
+              </div>
+              <div class="btnWrap">
+                <button class="btnWrap--btn" @click="onSelectOrder(false)"><span>意味から単語が分かるかテスト<br>意味→単語の順番</span></button>
+              </div>
             </div>
           </template>
           <template v-else>
@@ -343,15 +347,20 @@
                   <br><span @click="onReadAloud"><i class="fa volumeIcon" :class="volumeClass" aria-hidden="true"></i></span>
                 </template>
               </p>
-              <div class="btnWrap">
-                <template v-if="isQuestion">
+
+              <template v-if="isQuestion">
+                <div class="btnWrap">
                   <button class="btnWrap--btn" @click="onNext"><span>次へ</span></button>
-                </template>
-                <template v-else>
+                <div>
+              </template>
+              <template v-else>
+                <div class="btnWrap">
                   <button class="btnWrap--btn" @click="onJudge(true)"><span>正解</span></button>
+                </div>
+                <div class="btnWrap">
                   <button class="btnWrap--btn" @click="onJudge(false)"><span>不正解</span></button>
-                </template>
-              </div>
+                </div>
+              </template>
               <p>現在 {{ doneWordsNum }}/{{ memorizeWordNum }}個目</p>
             </div>
           </template>
@@ -363,13 +372,19 @@
         </div>
       </template>
       <template v-else>
-        <div class="btnWrap" v-if="!isAuto && !isManual">
-          <button class="btnWrap--btn" @click="onStart('auto')"><span>自動再生</span></button>
-          <button class="btnWrap--btn" @click="onStart('manual')"><span>テスト形式</span></button>
-        </div>
-        <div class="btnWrap" v-else>
-          <button class="btnWrap--btn" @click="onPlayAgain"><span>最初からやり直す</span></button>
-        </div>
+        <template v-if="!isAuto && !isManual">
+          <div class="btnWrap">
+            <button class="btnWrap--btn" @click="onStart('auto')"><span>自動再生</span></button>
+          </div>
+          <div class="btnWrap">
+            <button class="btnWrap--btn" @click="onStart('manual')"><span>テスト</span></button>
+          </div>
+        </template>
+        <template v-else>
+          <div class="btnWrap">
+            <button class="btnWrap--btn" @click="onPlayAgain"><span>最初からやり直す</span></button>
+          </div>
+        </template>
       </template>
       <p v-if="getSelectVoicesOnOff.length>0 && !isNowPlaying" class="attention">現在、自動再生の音声は{{ isOnOrOff }}になっています。<br>上のナビの「設定」から変更できます。</p>
     `,
@@ -801,6 +816,8 @@
       </div>
       <div class="btnWrap">
         <button class="btnWrap--btn" @click="onChange(editIndex)" :disabled="isDisabled"><span>変更を保存する</span></button>
+      </div>
+      <div class="btnWrap">
         <button class="btnWrap--btn" @click="onUnchange()"><span>変更をキャンセルする</span></button>
       </div>
       <div class="btnWrap">

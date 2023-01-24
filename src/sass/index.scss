@@ -2,6 +2,7 @@
 
 $colorFont: #333;
 $colorRed: #d00;
+$colorPink: #c99;
 $colorDarkGray: #999;
 $colorLightGray: #eee;
 $borderCommon: 2px solid $colorFont;
@@ -84,8 +85,6 @@ $borderRadiusCommon: 4px;
   border-radius: $borderRadius;
 }
 
-$fontSizeSmall: rem(12);
-
 [v-cloak] {
   display: none;
 }
@@ -99,7 +98,7 @@ body {
   font-family: "Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
   overflow-x: hidden;
 }
-:active,:hover {
+:hover {
   -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 .nav {
@@ -129,7 +128,7 @@ body {
     font-weight: bold;
   }
   .form__select {
-    @include baseSelect(10px 20px,14px,10px);
+    @include baseSelect(10px 16px 10px 12px,14px,10px);
     margin: 0 0 14px;
   }
   .form__wrap {
@@ -179,10 +178,12 @@ body {
     cursor: pointer;
     margin: 14px;
     background: $colorLightGray;
-    padding: 4px 8px;
+    padding: 6px 8px;
     border-radius: $borderRadiusCommon;
+    transition: all 0.3s;
     &:hover {
-      background: $colorDarkGray;
+      background: $colorPink;
+      color: #fff;
     }
   }
 }
@@ -190,6 +191,8 @@ body {
   padding: 20px;
   margin: 10px 0 20px;
   background: $colorLightGray;
+  border-radius: $borderRadiusCommon;
+  line-height: 1.4;
 }
 .displayWords__word {
   font-size: rem(24);
@@ -213,7 +216,8 @@ body {
   }
 }
 .displayWords__select {
-  @include baseSelect(6px 18px 6px 12px,10px,8px);
+  font-weight: normal;
+  @include baseSelect(4px 20px 4px 12px,8px,8px);
 }
 .displayWords__range {
   cursor: pointer;
@@ -253,7 +257,7 @@ body {
   padding: 0 10px 0 0;
 }
 .complete__icon--ok {
-  color: #c99;
+  color: $colorPink;
 }
 .complete__icon--again {
   color: $colorDarkGray;
@@ -274,6 +278,9 @@ body {
 }
 .resultList {
   text-align: left;
+  li {
+    padding: 20px 10px 0;
+  }
 }
 .volumeIcon {
   cursor: pointer;
@@ -283,10 +290,29 @@ body {
 }
 .attention {
   font-size: rem(14);
+  line-height: 1.6;
 }
 
 .btnWrap {
-  margin: 20px 10px 10px;
+  margin: 20px 4px 10px;
+  display: inline-block;
+  &:hover {
+    cursor: inherit;
+    .btnWrap--btn {
+      padding: 7px;
+      margin: 11px 11px;
+      span {
+        background: $colorPink;
+        color: #fff;
+      }
+      &:disabled {
+        span {
+          background: #fff;
+          color: $colorFont;
+        }
+      }
+    }
+  }
 }
 .btnWrap--btn {
   @include baseBtn;
@@ -300,22 +326,15 @@ body {
     display: block;
     padding: 10px;
     margin: 0;
-    color: #000;
+    color: $colorFont;
     border: $borderCommon;
     border-radius: $borderRadiusCommon;
     background: #fff;
-  }
-  &:hover {
-    padding: 7px;
-    margin: 11px 11px;
   }
   &:disabled {
     opacity: 0.3;
     margin: 11px 11px;
     padding: 7px;
-    &:hover {
-      cursor: inherit;
-    }
   }
 }
 .title--h1 {
@@ -385,7 +404,7 @@ body {
   background: $colorLightGray;
 }
 .form__input--text {
-  margin: 1px 0 0 8px;
+  margin: 2px 0 0 8px;
   display: block;
   font-size: rem(14);
 }
