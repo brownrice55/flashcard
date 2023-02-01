@@ -1,3 +1,4 @@
+@use 'sass:math';
 @import '_destyle';
 
 $colorFont: #333;
@@ -9,7 +10,7 @@ $borderCommon: 2px solid $colorFont;
 $borderRadiusCommon: 4px;
 
 @function rem($px) {
-  @return ($px/16)*1rem;
+  @return math.div($px, 16px) * 1rem;
 }
 
 @mixin baseSelect($padding, $top:14px, $right:10px) {
@@ -26,7 +27,7 @@ $borderRadiusCommon: 4px;
     color: $colorFont;
     top: $top;
     right: $right;
-    font-size: rem(8);
+    font-size: rem(8px);
     content: "▼";
     color: $colorDarkGray;
     pointer-events: none;
@@ -34,7 +35,7 @@ $borderRadiusCommon: 4px;
 }
 
 @mixin baseBtn {
-  font-size: rem(14);
+  font-size: rem(14px);
   line-height: 1.5;
   position: relative;
   display: inline-block;
@@ -110,7 +111,7 @@ body {
     padding: 10px;
     cursor: pointer;
     i {
-      font-size: rem(12);
+      font-size: rem(12px);
       color: $colorFont;
       padding: 0 4px;
     }
@@ -118,20 +119,20 @@ body {
 }
 .form {
   margin: 10px;
-  .form__title {
+  &__title {
     padding: 2px;
     width: 50%;
     margin: 4px auto;
-    font-size: rem(12);
+    font-size: rem(12px);
     background: $colorLightGray;
     border-radius: $borderRadiusCommon;
     font-weight: bold;
   }
-  .form__select {
+  &__select {
     @include baseSelect(10px 16px 10px 12px,14px,10px);
     margin: 0 0 14px;
   }
-  .form__wrap {
+  &__wrap {
     position: relative;
     margin: 0 10px 20px;
     .form__label {
@@ -139,7 +140,7 @@ body {
       position: absolute;
       top: -6px;
       left: 9.5%;
-      font-size: rem(13);
+      font-size: rem(13px);
       background: #fff;
       padding: 0 4px 0 0;
       opacity: 1.0;
@@ -162,7 +163,7 @@ body {
       position: absolute;
       bottom: 10%;
       right: 12%;
-      font-size: rem(14);
+      font-size: rem(14px);
       pointer-events: none;
     }
   }
@@ -193,66 +194,67 @@ body {
   background: $colorLightGray;
   border-radius: $borderRadiusCommon;
   line-height: 1.4;
-}
-.displayWords__word {
-  font-size: rem(24);
-  text-align: center;
-  margin: 0;
-  padding: 60px 0 30px;
-}
-.displayWords__conditions {
-  padding: 0;
-  margin: 5px 0 0 10px;
-  li {
-    list-style: none;
-    display: inline-block;
-    padding: 0 0 6px;
+  &__word {
+    font-size: rem(24px);
+    text-align: center;
     margin: 0;
-    font-weight: bold;
-    font-size: rem(14);
-    small {
-      font-weight: normal;
-    }
+    padding: 60px 0 30px;
   }
-}
-.displayWords__select {
-  font-weight: normal;
-  @include baseSelect(4px 20px 4px 12px,8px,8px);
-}
-.displayWords__range {
-  cursor: pointer;
-  background: #fff;
-  height: 14px;
-  width: 40%;
-  margin: 0 2px;
-  border: $borderCommon;
-  border-radius: $borderRadiusCommon;
-  @include bgStripe;
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    @include baseRangeThumb;
-  }
-  &::-moz-range-thumb {
-    border: none;
-    @include baseRangeThumb;
-  }
-  &::-moz-focus-outer {//Firefox
-    border: 0;
-  }
-  // -ms-thumb、-moz-range-thumbが必要か後で確認する//Edgeなど
-}
-.displayWords__conditions--speed {
-  label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    span,input {
+  &__conditions {
+    padding: 0;
+    margin: 5px 0 0 10px;
+    li {
+      list-style: none;
       display: inline-block;
+      padding: 0 0 6px;
+      margin: 0;
+      font-weight: bold;
+      font-size: rem(14px);
+      small {
+        font-weight: normal;
+      }
+    }
+    &--speed {
+      label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        span,input {
+          display: inline-block;
+        }
+      }
     }
   }
+  &__select {
+    font-weight: normal;
+    @include baseSelect(4px 20px 4px 12px,8px,8px);
+  }
+  &__range {
+    cursor: pointer;
+    background: #fff;
+    height: 14px;
+    width: 40%;
+    margin: 0 2px;
+    border: $borderCommon;
+    border-radius: $borderRadiusCommon;
+    @include bgStripe;
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      @include baseRangeThumb;
+    }
+    &::-moz-range-thumb {
+      border: none;
+      @include baseRangeThumb;
+    }
+    &::-moz-focus-outer {//Firefox
+      border: 0;
+    }
+    // -ms-thumb、-moz-range-thumbが必要か後で確認する//Edgeなど
+  }
 }
+
 .complete__icon {
-  font-size: rem(20);
+  font-size: rem(20px);
   line-height: 2;
   padding: 0 10px 0 0;
 }
@@ -265,9 +267,9 @@ body {
 
 .howmany {
   padding: 10px 0 0;
-}
-.howmany__select {
-  @include baseSelect(6px 18px 6px 12px,11px,6px);
+  &__select {
+    @include baseSelect(6px 18px 6px 12px,11px,6px);
+  }
 }
 .container {
   padding: 10px;
@@ -289,7 +291,7 @@ body {
   }
 }
 .attention {
-  font-size: rem(14);
+  font-size: rem(14px);
   line-height: 1.6;
 }
 
@@ -313,32 +315,32 @@ body {
       }
     }
   }
-}
-.btnWrap--btn {
-  @include baseBtn;
-  margin: 10px;
-  padding: 8px;
-  transition: all 0.3s;
-  border: $borderCommon;
-  @include bgStripe;
-  span {
-    position: relative;
-    display: block;
-    padding: 10px;
-    margin: 0;
-    color: $colorFont;
+  &--btn {
+    @include baseBtn;
+    margin: 10px;
+    padding: 8px;
+    transition: all 0.3s;
     border: $borderCommon;
-    border-radius: $borderRadiusCommon;
-    background: #fff;
-  }
-  &:disabled {
-    opacity: 0.3;
-    margin: 11px 11px;
-    padding: 7px;
+    @include bgStripe;
+    span {
+      position: relative;
+      display: block;
+      padding: 10px;
+      margin: 0;
+      color: $colorFont;
+      border: $borderCommon;
+      border-radius: $borderRadiusCommon;
+      background: #fff;
+    }
+    &:disabled {
+      opacity: 0.3;
+      margin: 11px 11px;
+      padding: 7px;
+    }
   }
 }
 .title--h1 {
-  font-size: rem(18);
+  font-size: rem(18px);
   font-weight: bold;
   margin: 20px 0;
 }
@@ -406,7 +408,7 @@ body {
 .form__input--text {
   margin: 2px 0 0 8px;
   display: block;
-  font-size: rem(14);
+  font-size: rem(14px);
 }
 
 .toTop {

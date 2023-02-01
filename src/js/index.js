@@ -351,7 +351,7 @@
               <template v-if="isQuestion">
                 <div class="btnWrap">
                   <button class="btnWrap--btn" @click="onNext"><span>次へ</span></button>
-                <div>
+                </div>
               </template>
               <template v-else>
                 <div class="btnWrap">
@@ -601,17 +601,19 @@
         let randomIndex = 0;
         let getRandomWordsIndex = [];
 
-        let alreadyMemorizedWords = this.getAlreadyMemorizedWords.map(data=>data[5]);
         let notYetMemorizedWords = this.getNotYetMemorizedWords.map(data=>data[5]);
 
         if(notYetMemorizedWords.length<Number(this.memorizeWordNum)) {
           //まだ覚えていない単語が選択した数より少ない時
           // 覚えた単語の日付の古いものから取得する
+          let alreadyMemorizedWords = this.getAlreadyMemorizedWords.map(data=>data);
           alreadyMemorizedWords.sort(
             function(a,b) {
-              return a > b ? 1 : -1;
+              return a[4] > b[4] ? 1 : -1;
             }
           );
+          alreadyMemorizedWords = alreadyMemorizedWords.map(data=>data[5]);
+
           let additionArrayLength = Number(this.memorizeWordNum)-notYetMemorizedWords.length;
           let selectedWordsFromAlready = alreadyMemorizedWords.slice(0,additionArrayLength);
           getRandomWordsIndex = notYetMemorizedWords.concat(selectedWordsFromAlready);
