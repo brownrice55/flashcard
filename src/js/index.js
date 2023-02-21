@@ -410,7 +410,7 @@
         this.isManual = false;
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
-        this.displayWords = this.getAllWords[this.randomWordsIndex[this.randomNo]][0];
+        this.displayWords = this.getWord(this.autoSpeed[this.speedRangeIndex], this.getAllWords[this.randomWordsIndex[this.randomNo]], this.orderIndexArray[this.index.order]);
         if(this.getSelectVoices.length>0) {
           this.volumeClass = (this.getSelectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         }
@@ -471,7 +471,7 @@
         this.volumeClass = (this.getSelectVoicesOnOff[0]) ? 'fa-volume-up' : '';
         this.countUp = 0;
         this.randomNo = this.getRandomIndex();
-        return this.getAllWords[this.randomWordsIndex[this.randomNo]][0];
+        return this.getWord(this.autoSpeed[this.speedRangeIndex], this.getAllWords[this.randomWordsIndex[this.randomNo]], this.orderIndexArray[this.index.order]);
       },
       onStop() {
         this.index.stopped = [this.num.stopped=1-this.num.stopped,1-this.num.stopped];
@@ -609,7 +609,7 @@
           let alreadyMemorizedWords = this.getAlreadyMemorizedWords.map(data=>data);
           alreadyMemorizedWords.sort(
             function(a,b) {
-              return a[4] > b[4] ? 1 : -1;
+              return a[4] > b[4] ? -1 : 1;
             }
           );
           alreadyMemorizedWords = alreadyMemorizedWords.map(data=>data[5]);
