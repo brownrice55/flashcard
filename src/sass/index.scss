@@ -1,0 +1,431 @@
+@use 'sass:math';
+@import '_destyle';
+
+$colorFont: #333;
+$colorRed: #d00;
+$colorPink: #c99;
+$colorDarkGray: #999;
+$colorLightGray: #eee;
+$borderCommon: 2px solid $colorFont;
+$borderRadiusCommon: 4px;
+
+@function rem($px) {
+  @return math.div($px, 16px) * 1rem;
+}
+
+@mixin baseSelect($padding, $top:14px, $right:10px) {
+  position: relative;
+  display: inline-block;
+  select {
+    border: $borderCommon;
+    border-radius: $borderRadiusCommon;
+    padding: $padding;
+    cursor: pointer;
+  }
+  &::after {
+    position: absolute;
+    color: $colorFont;
+    top: $top;
+    right: $right;
+    font-size: rem(8px);
+    content: "▼";
+    color: $colorDarkGray;
+    pointer-events: none;
+  }
+}
+
+@mixin baseBtn {
+  font-size: rem(14px);
+  line-height: 1.5;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s;
+  text-align: center;
+  vertical-align: middle;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  color: $colorFont;
+  border-radius: $borderRadiusCommon;
+}
+
+@mixin bgStripe {
+  background-image: -webkit-repeating-linear-gradient(
+    135deg,
+    $colorFont,
+    $colorFont 1px,
+    transparent 2px,
+    transparent 5px
+  );
+  background-image: repeating-linear-gradient(
+    -45deg,
+    $colorFont,
+    $colorFont 1px,
+    transparent 2px,
+    transparent 5px
+  );
+  background-size: 7px 7px;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+@mixin baseRangeThumb {
+  background: $colorFont;
+  width: 14px;
+  height: 18px;
+  border-radius: 30%;
+}
+
+@mixin commonVoiceOnOffInput($top,$left,$width,$height,$borderRadius) {
+  display: block;
+  top: $top;
+  left: $left;
+  width: $width;
+  height: $height;
+  border-radius: $borderRadius;
+}
+
+[v-cloak] {
+  display: none;
+}
+* {
+  font-family: inherit;
+  padding: 0;
+  margin: 0;
+}
+body {
+  color: $colorFont;
+  font-family: "Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  overflow-x: hidden;
+}
+:hover {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+.nav {
+  margin: 10px 4px;
+  padding: 0;
+  li {
+    list-style: none;
+    display: inline-block;
+    padding: 10px;
+    cursor: pointer;
+    i {
+      font-size: rem(12px);
+      color: $colorFont;
+      padding: 0 4px;
+    }
+  }
+}
+.form {
+  margin: 10px;
+  &__title {
+    padding: 2px;
+    width: 50%;
+    margin: 4px auto;
+    font-size: rem(12px);
+    background: $colorLightGray;
+    border-radius: $borderRadiusCommon;
+    font-weight: bold;
+  }
+  &__select {
+    @include baseSelect(10px 16px 10px 12px,14px,10px);
+    margin: 0 0 14px;
+  }
+  &__wrap {
+    position: relative;
+    margin: 0 10px 20px;
+    .form__label {
+      font-weight: bold;
+      position: absolute;
+      top: -6px;
+      left: 9.5%;
+      font-size: rem(13px);
+      background: #fff;
+      padding: 0 4px 0 0;
+      opacity: 1.0;
+    }
+    input[type='text'], textarea {
+      width: 80%;
+      padding: 10px 20px;
+      border: $borderCommon;
+      border-radius: $borderRadiusCommon;
+      resize: none;
+      text-align: left;
+      &.input--alert {
+        border-color: $colorRed;
+      }
+    }
+    ::placeholder {
+      color: $colorDarkGray;
+    }
+    .required {
+      position: absolute;
+      bottom: 10%;
+      right: 12%;
+      font-size: rem(14px);
+      pointer-events: none;
+    }
+  }
+}
+.required {
+  color: $colorRed;
+}
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  li {
+    cursor: pointer;
+    margin: 14px;
+    background: $colorLightGray;
+    padding: 6px 8px;
+    border-radius: $borderRadiusCommon;
+    transition: all 0.3s;
+    &:hover {
+      background: $colorPink;
+      color: #fff;
+    }
+  }
+}
+.displayWords {
+  padding: 20px;
+  margin: 10px 0 20px;
+  background: $colorLightGray;
+  border-radius: $borderRadiusCommon;
+  line-height: 1.4;
+  &__word {
+    font-size: rem(24px);
+    text-align: center;
+    margin: 0;
+    padding: 60px 0 30px;
+  }
+  &__conditions {
+    padding: 0;
+    margin: 5px 0 0 10px;
+    li {
+      list-style: none;
+      display: inline-block;
+      padding: 0 0 6px;
+      margin: 0;
+      font-weight: bold;
+      font-size: rem(14px);
+      small {
+        font-weight: normal;
+      }
+    }
+    &--speed {
+      label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        span,input {
+          display: inline-block;
+        }
+      }
+    }
+  }
+  &__select {
+    font-weight: normal;
+    @include baseSelect(4px 20px 4px 12px,8px,8px);
+  }
+  &__range {
+    cursor: pointer;
+    background: #fff;
+    height: 14px;
+    width: 40%;
+    margin: 0 2px;
+    border: $borderCommon;
+    border-radius: $borderRadiusCommon;
+    @include bgStripe;
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      @include baseRangeThumb;
+    }
+    &::-moz-range-thumb {
+      border: none;
+      @include baseRangeThumb;
+    }
+    &::-moz-focus-outer {//Firefox
+      border: 0;
+    }
+    // -ms-thumb、-moz-range-thumbが必要か後で確認する//Edgeなど
+  }
+}
+
+.complete__icon {
+  font-size: rem(20px);
+  line-height: 2;
+  padding: 0 10px 0 0;
+}
+.complete__icon--ok {
+  color: $colorPink;
+}
+.complete__icon--again {
+  color: $colorDarkGray;
+}
+
+.howmany {
+  padding: 10px 0 0;
+  &__select {
+    @include baseSelect(6px 18px 6px 12px,11px,6px);
+  }
+}
+.container {
+  padding: 10px;
+  margin: 0 auto;
+  text-align: center;
+  max-width: 480px;
+  min-width: 300px;
+}
+.resultList {
+  text-align: left;
+  li {
+    padding: 20px 10px 0;
+  }
+}
+.volumeIcon {
+  cursor: pointer;
+  &:hover {
+    color: #03c;
+  }
+}
+.attention {
+  font-size: rem(14px);
+  line-height: 1.6;
+}
+
+.btnWrap {
+  margin: 20px 4px 10px;
+  display: inline-block;
+  &:hover {
+    cursor: inherit;
+    .btnWrap--btn {
+      padding: 7px;
+      margin: 11px 11px;
+      span {
+        background: $colorPink;
+        color: #fff;
+      }
+      &:disabled {
+        span {
+          background: #fff;
+          color: $colorFont;
+        }
+      }
+    }
+  }
+  &--btn {
+    @include baseBtn;
+    margin: 10px;
+    padding: 8px;
+    transition: all 0.3s;
+    border: $borderCommon;
+    @include bgStripe;
+    span {
+      position: relative;
+      display: block;
+      padding: 10px;
+      margin: 0;
+      color: $colorFont;
+      border: $borderCommon;
+      border-radius: $borderRadiusCommon;
+      background: #fff;
+    }
+    &:disabled {
+      opacity: 0.3;
+      margin: 11px 11px;
+      padding: 7px;
+    }
+  }
+}
+.title--h1 {
+  font-size: rem(18px);
+  font-weight: bold;
+  margin: 20px 0;
+}
+.title--h2 {
+  position: relative;
+  display: inline-block;
+  padding: 0 55px;
+  font-weight: bold;
+  margin: 30px 0 10px;
+  &:before, &:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    display: inline-block;
+    width: 45px;
+    height: 2px;
+    border-top: solid 2px black;
+  }
+  &:before {
+    left:0;
+  }
+  &:after {
+    right: 0;
+  }
+}
+.form__input {
+  padding: 10px 4px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+.form__input--input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+.form__input--input:checked + .form__input--inputDummy {
+  background: $colorFont;
+}
+.form__input--input:checked + .form__input--inputDummy {
+  &::before {
+    content: "";
+    position: absolute;
+    @include commonVoiceOnOffInput(4px,10px,8px,3px,2px);
+    transform: translate(-6px, 5px) rotateZ(-135deg);
+    transform-origin: 2px 2px;
+    background: #fff;
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    @include commonVoiceOnOffInput(5px,11px,14px,3px,2px);
+    transform: translate(-6px, 5px) rotateZ(-45deg);
+    transform-origin: 2px 2px;
+    background: #fff;
+  }
+}
+.form__input--inputDummy {
+  position: relative;
+  @include commonVoiceOnOffInput(0,0,20px,20px,2px);
+  border: solid 2px transparent;
+  background: $colorLightGray;
+}
+.form__input--text {
+  margin: 2px 0 0 8px;
+  display: block;
+  font-size: rem(14px);
+}
+
+.toTop {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background: $colorFont;
+  color: #fff;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 4px 0 0;
+  outline: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.5s ease;
+  &.toTop--active {
+    opacity: 1;
+    transform: none;
+  }
+}

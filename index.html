@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>flashcard</title>
+    <link href="./dist/css/index.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  </head>
+  <body>
+
+    <div class="v-container container" v-cloak>
+      <ul class="nav" v-if="getAllWords.length>=10 && !isNowPlaying" id="top">
+        <li v-for="(page, key) in pages" @click="onClick(key)"><i class="fas" :class="listIcons[key]"></i>{{ page }}</li>
+      </ul>
+      <keep-alive>
+        <component :is="currentPage"></component>
+      </keep-alive>
+      <p v-if="getSelectVoicesOnOff.length<1" class="attention">{{ unsupported }}</p>
+    </div>
+
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-scrollto"></script>
+    <script src="./dist/js/index.js"></script>
+  </body>
+</html>
