@@ -18,33 +18,20 @@ Could you please let me know if there are any errors in my English or code?</p>
 <p>また、現在、英語とプログラミングの両方を勉強しています。
 おかしなところがありましたら、ご指摘いただけますと幸いです。</p>
 
-<p>I will provide additional information below at a later time.</p>
-<p>下記、後ほど追記します。</p>
-
 # flashcard
+> 単語帳
 
-## Overview
+## outline
+<p>
+This is a flashcard app for myself, designed to help me retain information after learning.
+The app includes an auto-play mode and a test mode.
+</p>
+<p>
+単語を覚えては忘れ、覚えては忘れ、を繰り返す、それでも覚えたい、自分のためのアプリ。
+自動再生とテスト形式があります。
+</p>
 
-## Usage
-
-<hr>
-
-# 単語帳
-
-## 概要
-<ul>
-<li>単語を覚えては忘れ、覚えては忘れ、を繰り返す、それでも覚えたい、自分のためのアプリ。</li>
-<li>趣味と勉強のための制作物です。少しずつブラッシュアップする予定です。</li>
-</ul>
-  
-## 使い方
-<ol>
-<li>最初に10個以上単語を登録します。</li>
-<li>ナビの「単語を覚える」を押して、自動再生かテストを選びます。</li>
-<li>単語を覚えます。</li>
-</ol>
-
-## 参考URL
+## References
 <ul>
 <li>https://jajaaan.co.jp/css/button/</li>
 </ul>
