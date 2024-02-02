@@ -1,12 +1,24 @@
+I should have written this README.md properly before, but I am writing it now.
+I will start by writing the README.md from now on, if possible.
 README.mdをきちんと書いておらず、後から付け足しています。
 今後はできるだけ最初に記載するようにいたします。
 
+I created this program to enhance my programming skills and pursue my hobbies.
+Furthermore, this program is incomplete, and I am still uncertain about my programming skills.
 このプログラムは個人の趣味で自分のプログラムの勉強のために書いています。
-また、未完成ですし、自分が書いたプログラムにもまだ自信が持てない状態です。
+また、未完成ですし、自分のプログラミングスキルにもまだ自信が持てない状態です。
 
+I have not assigned a license to this program.
+Therefore, refrain from using it, including uploading, distributing, and other actions.
 ライセンスは指定しておりません。
-どこかにアップロードしたり、再配布することなどはご遠慮いただけますと幸いです。
+どこかにアップロードしたり、配布することなどはご遠慮いただけますと幸いです。
 
+I am currently studying English and aiming to enhance both my English skills and my programming skills.
+Could you please let me know if there are any errors in my English or code?
+また、現在、英語とプログラミングの両方を勉強しています。
+おかしなところがありましたら、ご指摘いただけますと幸いです。
+
+I will provide additional information below at a later time.
 下記、後ほど追記します。
 
 # flashcard
