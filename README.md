@@ -31,7 +31,12 @@ The app includes an auto-play mode and a test mode.
 自動再生とテスト形式があります。
 </p>
 
-## References
+## references
 <ul>
 <li>https://jajaaan.co.jp/css/button/</li>
+</ul>
+
+## reset css
+<ul>
+<li>https://github.com/nicolas-cusan/destyle.css</li>
 </ul>
